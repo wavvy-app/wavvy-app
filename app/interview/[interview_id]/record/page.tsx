@@ -250,10 +250,6 @@ export default function RecordPage({
                 <span className="mr-2 mt-0.5">💡</span>
                 <span>Tip: Take your time to think before recording. You have up to 3 minutes per question.</span>
               </p>
-              <p className="text-xs text-gray-500 mt-2 flex items-start">
-                <span className="mr-2 mt-0.5">🔀</span>
-                <span>Questions are presented in random order to ensure fairness</span>
-              </p>
             </div>
 
             <div className="lg:w-3/5 flex flex-col">
