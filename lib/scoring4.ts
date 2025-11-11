@@ -314,50 +314,29 @@ CANDIDATE'S ANSWER:
 "${transcript}"
 
 YOUR TASK:
-Evaluate this answer on a 0-2 scale. Your evaluation should be based on whether the answer meets the expectations for a ${jobSeniority} role, while considering the candidate's ${candidateContext.yearsExperience} years of experience.
+Evaluate this answer on a 0-2 scale based on whether it meets ${jobSeniority}-level expectations.
 
 EVALUATION RUBRIC:
 
 Score 2 (Excellent):
-- Directly addresses the question with relevant, specific details
-- Demonstrates clear understanding of the role's responsibilities and required skills
-- Provides concrete examples or structured reasoning appropriate for a ${jobSeniority} position
-- Shows depth of knowledge and practical application expected at this level
-- Well-organized and articulate response
-- Meets or exceeds ${jobSeniority}-level expectations
+- Directly addresses the question with concrete examples and relevant details
+- Demonstrates clear understanding and application of role requirements
 
 Score 1 (Acceptable):
 - Addresses the question but lacks depth or specific examples
-- Shows basic understanding but misses some key aspects of the role's requirements
-- Answer is somewhat generic or could apply to many roles
-- Reasoning is present but not fully developed for ${jobSeniority} level
-- Shows foundational competency but doesn't fully demonstrate ${jobSeniority}-level expertise
+- Shows basic understanding but misses key aspects expected at ${jobSeniority} level
 
 Score 0 (Poor):
 - Off-topic, incoherent, or fails to address the question
-- Shows lack of understanding of basic role requirements
-- No relevant examples or reasoning provided
-- Answer is too vague, contradictory, or demonstrates clear gaps in knowledge
-- Falls significantly short of ${jobSeniority}-level expectations
-
-EVALUATION GUIDELINES:
-- Evaluate primarily against ${jobSeniority}-level expectations for this role
-- Consider what type of question this is (behavioral/situational/technical) and adjust expectations accordingly
-- For behavioral questions: look for specific situations, actions taken, and results (STAR method)
-- For situational questions: look for clear process, logical steps, and sound reasoning
-- For technical questions: look for specific knowledge and practical application
-- The candidate has ${candidateContext.yearsExperience} years of experience - note in your reasoning if they demonstrate capabilities beyond or below what's typical for their experience level
-- Be fair but maintain the standards expected for a ${jobSeniority} role
+- Shows lack of understanding or demonstrates clear gaps in knowledge
 
 Provide your evaluation in JSON format:
 {
   "score": 0-2,
-  "reasoning": "2-3 sentences explaining the score, referencing specific strengths or gaps in the answer relative to ${jobSeniority}-level expectations",
-  "strengths": ["specific strength 1", "specific strength 2"],
-  "weaknesses": ["specific weakness 1", "specific weakness 2"]
-}
-
-Focus on being fair, objective, and constructive. Your feedback should help the candidate understand what they did well and where they can improve.`;
+  "reasoning": "2-3 sentences explaining the score relative to ${jobSeniority}-level expectations",
+  "strengths": ["strength 1", "strength 2"],
+  "weaknesses": ["weakness 1", "weakness 2"]
+}`;
 }
 
 // ============================================================================
@@ -420,44 +399,26 @@ INDIVIDUAL QUESTION PERFORMANCE:
 ${scoresSummary}
 
 YOUR TASK:
-Based on this complete interview performance, provide comprehensive feedback that evaluates the candidate against ${jobSeniority}-level expectations while considering their ${candidateContext.yearsExperience} years of experience.
+Provide comprehensive feedback evaluating the candidate against ${jobSeniority}-level expectations.
 
 1. OVERALL FEEDBACK (3-4 sentences):
-   - Summarize the candidate's overall performance against ${jobSeniority}-level expectations
-   - Comment on their fit for this ${jobSeniority} ${jobContext.jobTitle} role
-   - If there's a gap between their experience level (${candidateLevel}) and the role requirements, address whether they demonstrate potential to bridge that gap OR exceed expectations
-   - Be balanced - acknowledge both strengths and areas for growth
-   - Be honest about current readiness for this ${jobSeniority} role - if they don't yet meet the level, state that clearly while noting any strong potential for growth with mentorship or development
+   - Summarize their performance against ${jobSeniority}-level expectations
+   - Comment on their fit for this role
+   - Address any gap between their ${candidateLevel} experience and role requirements
 
 2. TOP 3 STRENGTHS:
-   - Identify specific strengths demonstrated across their answers
-   - Reference actual competencies or skills they showed
-   - Connect strengths to the role's requirements where possible
-   - Be specific, not generic (cite evidence from their answers)
-   - Note if they demonstrated capabilities beyond their ${candidateLevel} experience level
+   - Identify demonstrated strengths with evidence from their answers
+   - Connect to the role's requirements where relevant
 
 3. TOP 3 AREAS TO IMPROVE:
-   - Identify specific gaps or weaknesses relative to ${jobSeniority}-level expectations
-   - Make suggestions actionable and relevant to the role
-   - If they're below the required level, be specific about what skills/experience they need to develop
-   - If they meet the level, suggest areas for continued growth
-   - Be constructive and professional
-   - Focus on areas that would help them succeed in this role or advance their career
-
-IMPORTANT:
-- Base your feedback on their ACTUAL answers and performance, not assumptions
-- Evaluate primarily against ${jobSeniority}-level expectations for this role
-- Reference the role's specific requirements (responsibilities and skills listed above)
-- If they scored well on questions testing key responsibilities, highlight that
-- If they struggled with questions about required skills, note that as an area to improve
-- Be honest about whether their ${candidateContext.yearsExperience} years of experience translates to readiness for this ${jobSeniority} role
-- Make feedback specific to THIS role, not generic interview feedback
+   - Identify gaps relative to ${jobSeniority}-level expectations
+   - Provide actionable suggestions relevant to this role
 
 Respond in JSON format:
 {
-  "overallFeedback": "3-4 sentence summary honestly evaluating their fit for this ${jobSeniority} role, considering their ${candidateLevel} experience level",
-  "topStrengths": ["specific strength 1 with evidence", "specific strength 2 with evidence", "specific strength 3 with evidence"],
-  "areasToImprove": ["specific area 1 with actionable advice", "specific area 2 with actionable advice", "specific area 3 with actionable advice"]
+  "overallFeedback": "3-4 sentence evaluation of fit for this ${jobSeniority} role",
+  "topStrengths": ["strength 1 with evidence", "strength 2 with evidence", "strength 3 with evidence"],
+  "areasToImprove": ["area 1 with actionable advice", "area 2 with actionable advice", "area 3 with actionable advice"]
 }`;
 }
 

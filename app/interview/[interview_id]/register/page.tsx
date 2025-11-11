@@ -16,6 +16,7 @@ interface FormData {
   years_experience: string;
   salary_expectations: string;
   location_confirmed: boolean;
+  consent_given: boolean;
 }
 
 export default function RegisterPage({
@@ -39,6 +40,7 @@ export default function RegisterPage({
     years_experience: '',
     salary_expectations: '',
     location_confirmed: false,
+    consent_given: false,
   });
 
   useEffect(() => {
@@ -103,6 +105,10 @@ export default function RegisterPage({
       return 'Salary expectations are required';
     }
 
+    if (!formData.consent_given) {
+      return 'You must consent to recording and data processing to continue';
+    }
+
     if (needsLocationConfirmation && !formData.location_confirmed) {
       return 'Please confirm you can work in the specified location';
     }
@@ -137,6 +143,8 @@ export default function RegisterPage({
           years_experience: Number(formData.years_experience),
           salary_expectations: formData.salary_expectations.trim(),
           location_confirmed: needsLocationConfirmation ? formData.location_confirmed : undefined,
+          consent_given: formData.consent_given,
+          consent_timestamp: new Date().toISOString(),
         }),
       });
 
@@ -278,38 +286,57 @@ export default function RegisterPage({
               />
             </div>
 
-            {needsLocationConfirmation && (
-              <div className="p-5 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg border-2 border-purple-100">
-                <label className="flex items-start cursor-pointer">
+            {/* Combined Consents Section */}
+            <div className="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border-2 border-blue-200 space-y-4">
+              <h4 className="font-semibold text-gray-900 text-sm flex items-center">
+                <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                Required Confirmations
+              </h4>
+              
+              {/* Consent Checkbox - Always Shown */}
+              <label className="flex items-start cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={formData.consent_given}
+                  onChange={(e) => setFormData({ ...formData, consent_given: e.target.checked })}
+                  className="mt-1 mr-3 h-5 w-5 text-[#667eea] border-gray-300 rounded focus:ring-[#667eea] cursor-pointer"
+                  required
+                />
+                <div className="flex-1">
+                  <span className="text-sm text-gray-700 group-hover:text-gray-900">
+                    I consent to being recorded during this interview. My video responses will be stored securely and used solely for recruitment purposes. <span className="text-red-500">*</span>
+                  </span>
+                  <p className="text-xs text-gray-500 mt-1.5">
+                    Video recordings are retained for review purposes and may be deleted after the recruitment process concludes.
+                  </p>
+                </div>
+              </label>
+              
+              {/* Location Checkbox - Conditionally Shown */}
+              {needsLocationConfirmation && (
+                <label className="flex items-start cursor-pointer group pt-1 border-t border-blue-200">
                   <input
                     type="checkbox"
                     checked={formData.location_confirmed}
                     onChange={(e) => setFormData({ ...formData, location_confirmed: e.target.checked })}
-                    className="mt-1 mr-3 h-5 w-5 text-[#667eea] border-gray-300 rounded focus:ring-[#667eea]"
+                    className="mt-1 mr-3 h-5 w-5 text-[#667eea] border-gray-300 rounded focus:ring-[#667eea] cursor-pointer"
                     required
                   />
-                  <span className="text-sm text-gray-700">
+                  <span className="text-sm text-gray-700 group-hover:text-gray-900 pt-3">
                     I confirm I can work <strong className="text-gray-900">{interview.work_model}</strong> in{' '}
                     <strong className="text-gray-900">{interview.location}</strong> <span className="text-red-500">*</span>
                   </span>
                 </label>
-              </div>
-            )}
+              )}
+            </div>
 
             {error && (
               <div className="p-4 bg-gradient-to-br from-red-50 to-red-100 border-l-4 border-red-500 text-red-700 rounded-lg text-sm">
                 {error}
               </div>
             )}
-
-            <div className="p-5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border-2 border-gray-200 text-sm text-gray-600">
-              <p className="flex items-start">
-                <svg className="w-5 h-5 text-gray-400 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                By continuing, you consent to being recorded during the interview. Your data will be used solely for recruitment purposes.
-              </p>
-            </div>
 
             <button
               type="submit"

@@ -24,6 +24,8 @@ interface CandidateData {
   years_experience: number;
   salary_expectations: string;
   location_confirmed?: boolean;
+  consent_given: boolean;
+  consent_timestamp: string;
   registered_at: string;
   recordings?: Recording[];
   results?: InterviewResults;

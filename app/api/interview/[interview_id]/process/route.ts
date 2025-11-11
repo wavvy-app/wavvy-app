@@ -67,10 +67,22 @@ export async function POST(
 
     const transcripts = await transcribeMultipleVideos(videoUrls);
 
+    // ✅ Enhanced scoring with full context
     const scoringResult = await scoreInterview(
       interview.questions,
       transcripts,
-      interview.job_title
+      {
+        jobTitle: interview.job_title,
+        seniority: interview.seniority,
+        industry: interview.industry,
+        roleTemplate: interview.role_template,
+        keyResponsibilities: interview.key_responsibilities || [],
+        requiredSkills: interview.required_skills || [],
+      },
+      {
+        yearsExperience: candidate.years_experience,
+        candidateName: candidate.name, // Optional: for personalized feedback
+      }
     );
 
     await saveInterviewResults(interview_id, candidate_id, {

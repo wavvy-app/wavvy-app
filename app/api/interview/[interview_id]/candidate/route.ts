@@ -23,6 +23,8 @@ export async function POST(
       years_experience,
       salary_expectations,
       location_confirmed,
+      consent_given,
+      consent_timestamp,
     } = await req.json();
 
     if (!name?.trim()) {
@@ -53,6 +55,14 @@ export async function POST(
       );
     }
 
+    // Validate consent
+    if (!consent_given) {
+      return NextResponse.json(
+        { error: "Consent to recording is required" },
+        { status: 400 }
+      );
+    }
+
     const candidateId = crypto.randomUUID().slice(0, 12);
 
     const candidateData = {
@@ -64,6 +74,8 @@ export async function POST(
       years_experience: Number(years_experience),
       salary_expectations: salary_expectations.trim(),
       location_confirmed: location_confirmed || undefined,
+      consent_given: consent_given,
+      consent_timestamp: consent_timestamp,
       registered_at: new Date().toISOString(),
       status: 'registered' as const,
     };

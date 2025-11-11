@@ -191,121 +191,40 @@ export async function scoreInterview(
   return await generateOverallFeedback(questionScores, jobContext, candidateContext);
 }
 
-// ============================================================================
-// CHANGED: Separated candidate level derivation from job seniority
-// This keeps job requirements separate from candidate experience
-// ============================================================================
-function getCandidateLevel(yearsExperience: number): string {
-  if (yearsExperience < 1) return 'Entry-level';
-  if (yearsExperience < 3) return 'Junior';
-  if (yearsExperience < 5) return 'Mid-level';
-  if (yearsExperience < 8) return 'Senior';
-  return 'Lead/Manager';
-}
-
-// ============================================================================
-// CHANGED: Renamed from getExperienceAdjustment to getSeniorityExpectations
-// Now focuses on JOB requirements, not candidate experience
-// Takes the actual job seniority string and normalizes it
-// ============================================================================
-function getSeniorityExpectations(seniority: string): string {
-  const level = seniority?.toLowerCase() || '';
-  
-  if (level.includes('entry')) {
-    return 'For Entry-level roles: Prioritize foundational knowledge, eagerness to learn, and cultural fit. Candidates should demonstrate basic understanding and potential for growth.';
-  }
-  if (level.includes('junior')) {
-    return 'For Junior roles: Look for fundamental skills, learning mindset, and ability to execute with guidance. Candidates should show they can handle core responsibilities with mentorship.';
-  }
-  if (level.includes('senior')) {
-    return 'For Senior roles: Expect strategic thinking, proven track record, leadership examples, and deep domain expertise. Candidates should demonstrate independence and ability to mentor others.';
-  }
-  if (level.includes('lead') || level.includes('manager')) {
-    return 'For Lead/Manager roles: Expect strategic vision, team leadership, cross-functional collaboration, and business impact. Candidates should demonstrate ability to drive results through others.';
-  }
-  // Default to Mid-level
-  return 'For Mid-level roles: Balance solid fundamentals with growing strategic thinking. Candidates should demonstrate independence on routine tasks and ability to handle complex challenges with minimal guidance.';
-}
-
-// ============================================================================
-// CHANGED: Added function to detect and describe level mismatch
-// This helps the LLM understand when candidate experience doesn't align with job
-// ============================================================================
-function getLevelMismatchGuidance(
-  jobSeniority: string,
-  candidateLevel: string,
-  yearsExperience: number
-): string {
-  const jobLevel = jobSeniority?.toLowerCase() || 'mid-level';
-  const candLevel = candidateLevel.toLowerCase();
-  
-  // Normalize for comparison
-  const jobRank = getRankFromLevel(jobLevel);
-  const candRank = getRankFromLevel(candLevel);
-  
-  if (jobRank === candRank) {
-    return `The candidate's ${yearsExperience} years of experience aligns well with this ${jobSeniority} role.`;
-  }
-  
-  if (candRank < jobRank) {
-    return `Note: This is a ${jobSeniority} role, but the candidate has ${yearsExperience} years of experience (${candidateLevel} level). Evaluate against ${jobSeniority}-level expectations, but consider whether their answers demonstrate the depth expected for this role OR show strong potential to grow into it with mentorship.`;
-  }
-  
-  // Candidate is overqualified
-  return `Note: The candidate has ${yearsExperience} years of experience (${candidateLevel} level) applying for a ${jobSeniority} role. Evaluate against ${jobSeniority}-level expectations, noting where they exceed requirements.`;
-}
-
-// Helper function to rank levels for comparison
-function getRankFromLevel(level: string): number {
-  if (level.includes('entry')) return 1;
-  if (level.includes('junior')) return 2;
-  if (level.includes('mid')) return 3;
-  if (level.includes('senior')) return 4;
-  if (level.includes('lead') || level.includes('manager')) return 5;
-  return 3; // Default to mid-level
-}
-
-// ============================================================================
-// CHANGED: Completely refactored prompt to separate job vs candidate context
-// Now explicitly presents both without merging them
-// ============================================================================
 function buildScoringPrompt(
   question: string,
   transcript: string,
   jobContext: JobContext,
   candidateContext: CandidateContext
 ): string {
-  const jobSeniority = jobContext.seniority || 'Mid-level';
-  const candidateLevel = getCandidateLevel(candidateContext.yearsExperience);
-  
-  const responsibilities = jobContext.keyResponsibilities && jobContext.keyResponsibilities.length > 0
-    ? jobContext.keyResponsibilities.slice(0, 4).join('\n- ')
-    : 'General professional responsibilities';
-  const skills = jobContext.requiredSkills && jobContext.requiredSkills.length > 0
-    ? jobContext.requiredSkills.slice(0, 5).join(', ')
-    : 'General professional skills';
+  const seniority = jobContext.seniority || 'Professional';
+  const responsibilities =
+    jobContext.keyResponsibilities && jobContext.keyResponsibilities.length > 0
+      ? jobContext.keyResponsibilities.slice(0, 4).join('\n- ')
+      : 'General professional responsibilities';
 
-  return `You are an expert interviewer evaluating a candidate's response for a ${jobSeniority} ${jobContext.jobTitle} position.
+  const skills =
+    jobContext.requiredSkills && jobContext.requiredSkills.length > 0
+      ? jobContext.requiredSkills.slice(0, 5).join(', ')
+      : 'General professional skills';
 
-ROLE REQUIREMENTS:
+  return `You are an expert interviewer evaluating a candidate's response for a ${seniority}-level ${jobContext.jobTitle} position.
+
+ROLE CONTEXT:
 Job Title: ${jobContext.jobTitle}
-Seniority Level: ${jobSeniority}
+Seniority Level: ${seniority}
 ${jobContext.industry ? `Industry: ${jobContext.industry}` : ''}
 Role Type: ${jobContext.roleTemplate || 'Professional role'}
 
-Key Responsibilities:
+Key Responsibilities for this role:
 - ${responsibilities}
 
 Required Skills:
 ${skills}
 
-${getSeniorityExpectations(jobSeniority)}
-
 CANDIDATE PROFILE:
 Years of Experience: ${candidateContext.yearsExperience}
-Candidate Level: ${candidateLevel}
-
-${getLevelMismatchGuidance(jobSeniority, candidateLevel, candidateContext.yearsExperience)}
+${candidateContext.candidateName ? `Candidate Name: ${candidateContext.candidateName}` : ''}
 
 INTERVIEW QUESTION:
 ${question}
@@ -314,45 +233,42 @@ CANDIDATE'S ANSWER:
 "${transcript}"
 
 YOUR TASK:
-Evaluate this answer on a 0-2 scale. Your evaluation should be based on whether the answer meets the expectations for a ${jobSeniority} role, while considering the candidate's ${candidateContext.yearsExperience} years of experience.
+Evaluate this answer **against expectations for a ${seniority}-level role**.
+The candidate has ${candidateContext.yearsExperience} years of experience — consider whether their answer demonstrates the depth, reasoning, and clarity expected for this ${seniority}-level position.
 
 EVALUATION RUBRIC:
 
 Score 2 (Excellent):
 - Directly addresses the question with relevant, specific details
 - Demonstrates clear understanding of the role's responsibilities and required skills
-- Provides concrete examples or structured reasoning appropriate for a ${jobSeniority} position
-- Shows depth of knowledge and practical application expected at this level
+- Provides concrete examples or structured reasoning appropriate for a ${seniority}-level role
+- Shows depth of knowledge and practical application
 - Well-organized and articulate response
-- Meets or exceeds ${jobSeniority}-level expectations
 
 Score 1 (Acceptable):
 - Addresses the question but lacks depth or specific examples
-- Shows basic understanding but misses some key aspects of the role's requirements
-- Answer is somewhat generic or could apply to many roles
-- Reasoning is present but not fully developed for ${jobSeniority} level
-- Shows foundational competency but doesn't fully demonstrate ${jobSeniority}-level expertise
+- Shows basic understanding but misses key aspects of the role's requirements
+- Reasoning is present but not fully developed
+- Shows potential but needs more development to meet ${seniority}-level expectations
 
 Score 0 (Poor):
 - Off-topic, incoherent, or fails to address the question
 - Shows lack of understanding of basic role requirements
 - No relevant examples or reasoning provided
-- Answer is too vague, contradictory, or demonstrates clear gaps in knowledge
-- Falls significantly short of ${jobSeniority}-level expectations
+- Too vague, contradictory, or demonstrates clear knowledge gaps
 
 EVALUATION GUIDELINES:
-- Evaluate primarily against ${jobSeniority}-level expectations for this role
-- Consider what type of question this is (behavioral/situational/technical) and adjust expectations accordingly
-- For behavioral questions: look for specific situations, actions taken, and results (STAR method)
-- For situational questions: look for clear process, logical steps, and sound reasoning
-- For technical questions: look for specific knowledge and practical application
-- The candidate has ${candidateContext.yearsExperience} years of experience - note in your reasoning if they demonstrate capabilities beyond or below what's typical for their experience level
-- Be fair but maintain the standards expected for a ${jobSeniority} role
+- Consider the type of question (behavioral, situational, or technical)
+- For behavioral questions: look for specific situations, actions, and results
+- For situational questions: look for logical process and sound reasoning
+- For technical questions: look for accuracy, practical experience, and relevance
+- The benchmark should remain at the ${seniority}-level standard — note if the candidate's limited or extensive experience affects their ability to meet that bar.
+- ${getSeniorityExpectations(jobContext.seniority || 'Professional')}
 
-Provide your evaluation in JSON format:
+Respond in **valid JSON only**:
 {
   "score": 0-2,
-  "reasoning": "2-3 sentences explaining the score, referencing specific strengths or gaps in the answer relative to ${jobSeniority}-level expectations",
+  "reasoning": "2-3 sentences explaining the score, referencing specific strengths or gaps in the answer",
   "strengths": ["specific strength 1", "specific strength 2"],
   "weaknesses": ["specific weakness 1", "specific weakness 2"]
 }
@@ -360,9 +276,7 @@ Provide your evaluation in JSON format:
 Focus on being fair, objective, and constructive. Your feedback should help the candidate understand what they did well and where they can improve.`;
 }
 
-// ============================================================================
-// CHANGED: Updated feedback prompt with same separation of concerns
-// ============================================================================
+
 function buildFeedbackPrompt(
   questionScores: QuestionScore[],
   jobContext: JobContext,
@@ -370,9 +284,7 @@ function buildFeedbackPrompt(
   averageScore: number,
   overallScore: number
 ): string {
-  const jobSeniority = jobContext.seniority || 'Mid-level';
-  const candidateLevel = getCandidateLevel(candidateContext.yearsExperience);
-  
+  const seniority = jobContext.seniority || 'Professional';
   const responsibilities = jobContext.keyResponsibilities && jobContext.keyResponsibilities.length > 0
     ? jobContext.keyResponsibilities.slice(0, 4).join('\n- ')
     : 'General professional responsibilities';
@@ -389,27 +301,22 @@ Evaluation: ${q.reasoning}`;
     })
     .join('\n\n');
 
-  return `You are an expert interviewer providing comprehensive feedback for a candidate who interviewed for a ${jobSeniority} ${jobContext.jobTitle} position.
+  return `You are an expert interviewer providing comprehensive feedback for a candidate who interviewed for a ${seniority}-level ${jobContext.jobTitle} position.
 
-ROLE REQUIREMENTS:
+ROLE CONTEXT:
 Job Title: ${jobContext.jobTitle}
-Seniority Level: ${jobSeniority}
+Seniority Level: ${seniority}
 ${jobContext.industry ? `Industry: ${jobContext.industry}` : ''}
 Role Type: ${jobContext.roleTemplate || 'Professional role'}
 
-Key Responsibilities:
+Key Responsibilities for this role:
 - ${responsibilities}
 
 Required Skills:
 ${skills}
 
-${getSeniorityExpectations(jobSeniority)}
-
 CANDIDATE PROFILE:
 Years of Experience: ${candidateContext.yearsExperience}
-Candidate Level: ${candidateLevel}
-
-${getLevelMismatchGuidance(jobSeniority, candidateLevel, candidateContext.yearsExperience)}
 
 INTERVIEW PERFORMANCE SUMMARY:
 Total Questions: ${questionScores.length}
@@ -420,46 +327,56 @@ INDIVIDUAL QUESTION PERFORMANCE:
 ${scoresSummary}
 
 YOUR TASK:
-Based on this complete interview performance, provide comprehensive feedback that evaluates the candidate against ${jobSeniority}-level expectations while considering their ${candidateContext.yearsExperience} years of experience.
+Based on this complete interview performance, provide:
 
 1. OVERALL FEEDBACK (3-4 sentences):
-   - Summarize the candidate's overall performance against ${jobSeniority}-level expectations
-   - Comment on their fit for this ${jobSeniority} ${jobContext.jobTitle} role
-   - If there's a gap between their experience level (${candidateLevel}) and the role requirements, address whether they demonstrate potential to bridge that gap OR exceed expectations
+   - Summarize the candidate's overall performance relative to their ${candidateContext.yearsExperience} years of experience
+   - Comment on their fit for this ${seniority}-level ${jobContext.jobTitle} role
+   - Specifically address the context of the candidate's ${candidateContext.yearsExperience} years of experience in relation to the role's expectations.
    - Be balanced - acknowledge both strengths and areas for growth
-   - Be honest about current readiness for this ${jobSeniority} role - if they don't yet meet the level, state that clearly while noting any strong potential for growth with mentorship or development
 
 2. TOP 3 STRENGTHS:
    - Identify specific strengths demonstrated across their answers
    - Reference actual competencies or skills they showed
    - Connect strengths to the role's requirements where possible
-   - Be specific, not generic (cite evidence from their answers)
-   - Note if they demonstrated capabilities beyond their ${candidateLevel} experience level
+   - Be specific, not generic (avoid "good communicator" unless you can cite evidence)
+   - Consider what stands out for someone with ${candidateContext.yearsExperience} years of experience
 
 3. TOP 3 AREAS TO IMPROVE:
-   - Identify specific gaps or weaknesses relative to ${jobSeniority}-level expectations
+   - Identify specific gaps or weaknesses in their responses
    - Make suggestions actionable and relevant to the role
-   - If they're below the required level, be specific about what skills/experience they need to develop
-   - If they meet the level, suggest areas for continued growth
+   - Consider what a candidate applying for a **${seniority}-level** position should demonstrate
    - Be constructive and professional
-   - Focus on areas that would help them succeed in this role or advance their career
+   - Focus on areas that would help them progress in their career
 
 IMPORTANT:
 - Base your feedback on their ACTUAL answers and performance, not assumptions
-- Evaluate primarily against ${jobSeniority}-level expectations for this role
 - Reference the role's specific requirements (responsibilities and skills listed above)
 - If they scored well on questions testing key responsibilities, highlight that
 - If they struggled with questions about required skills, note that as an area to improve
-- Be honest about whether their ${candidateContext.yearsExperience} years of experience translates to readiness for this ${jobSeniority} role
+- The candidate has ${candidateContext.yearsExperience} years of experience. Evaluate whether their answers demonstrate the depth and expertise expected for a ${seniority}-level role."
 - Make feedback specific to THIS role, not generic interview feedback
 
 Respond in JSON format:
 {
-  "overallFeedback": "3-4 sentence summary honestly evaluating their fit for this ${jobSeniority} role, considering their ${candidateLevel} experience level",
-  "topStrengths": ["specific strength 1 with evidence", "specific strength 2 with evidence", "specific strength 3 with evidence"],
-  "areasToImprove": ["specific area 1 with actionable advice", "specific area 2 with actionable advice", "specific area 3 with actionable advice"]
+  "overallFeedback": "3-4 sentence summary of their performance and fit for the role, considering their experience level",
+  "topStrengths": ["specific strength 1", "specific strength 2", "specific strength 3"],
+  "areasToImprove": ["specific area 1", "specific area 2", "specific area 3"]
 }`;
 }
+
+function getSeniorityExpectations(seniority: string): string {
+  const level = seniority?.toLowerCase() || 'professional';
+
+  if (level.includes('junior') || level.includes('entry')) {
+    return 'For junior-level roles: prioritize fundamentals, learning mindset, and potential over perfect execution.';
+  }
+  if (level.includes('senior') || level.includes('lead')) {
+    return 'For senior-level roles: expect strategic thinking, leadership examples, and deep domain expertise.';
+  }
+  return 'For mid-level roles: balance between solid fundamentals and growing strategic thinking.';
+}
+
 
 function normalizeScoreResult(
   question: string,
