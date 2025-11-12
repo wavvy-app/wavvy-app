@@ -1,94 +1,175 @@
 # Wavvy Interview Platform MVP
 
-AI-powered video interview platform for recruiters and candidates.
+AI-powered video interview platform that automates candidate screening with intelligent scoring and feedback.
 
 ## 🎯 What It Does
 
-- **For Recruiters:** Create AI-generated interview questions, send link to candidates
-- **For Candidates:** Record video answers, submit for AI analysis
-- **AI Scoring:** Automatic transcription (Groq Whisper), scoring (Groq Llama 70B), feedback generation
-- **Results:** Auto-export to Google Sheets + email recruiter with scored results
+**End-to-end AI interview automation:**
+- **Recruiters:** Paste job description → AI generates interview questions → Share unique link with candidates
+- **Candidates:** Register → Record video answers (3 min/question) → Submit interview
+- **AI Processing:** Automatic transcription (Groq Whisper) + scoring (Groq Llama 70B) + feedback generation
+- **Results:** Auto-export to Google Sheets + email recruiter with comprehensive candidate analysis
 
 ## 🚀 Live Demo
 
-**Deployed App:** [https://wavvy-opal.vercel.app/]
+**Deployed App:** https://wavvy-opal.vercel.app/
 
-**Test Credentials:**
-- Recruiter email for testing: `[popsondebby@gmail.com]`
-- Use [popsondebby@gmail.com] candidate details when registering
+### Quick Test Flow:
+1. Visit homepage and create an interview (paste job details or fill form)
+2. Copy the generated interview link
+3. Open link in new tab, register as candidate, and record answers
+4. Wait ~3-5 minutes for AI processing
+5. Check results at https://docs.google.com/spreadsheets/d/15B21-6XSPeTwNsCuuil0p141ly1z3IjltDgmnshLiKM/edit?gid=0#gid=0 (for testing if resend API not configured)
+
+**Note:** Email notifications require Resend API setup (see Environment Setup below)
 
 ## 🛠️ Tech Stack
 
+**All Open Source / Free Tier:**
 - **Frontend:** Next.js 15, React, TypeScript, Tailwind CSS
 - **Backend:** Next.js API Routes (serverless)
 - **Database:** Vercel KV (Redis)
 - **Storage:** Vercel Blob (video files)
-- **AI:** Groq API (Whisper for transcription, Llama 3.1 70B for scoring)
+- **AI:** Groq API (Whisper for transcription, Llama 3.3 70B for scoring)
 - **Email:** Resend API
 - **Sheets:** Google Sheets API
 - **Deployment:** Vercel
 
-## 📋 Features Implemented
+## 📋 Implemented Features
 
-### Phase A: Recruiter Setup
-- ✅ Interview creation with job details
-- ✅ AI question generation based on role/skills
-- ✅ Unique shareable interview links
+### ✅ Phase 1 Requirements Met
 
-### Phase B: Candidate Experience
-- ✅ Registration form (name, email, experience, salary)
-- ✅ Video recording interface (3 min per question)
-- ✅ Progress tracking (X/5 questions)
-- ✅ Re-record functionality
-- ✅ Submission confirmation
+**A. Recruiter Setup**
+- Simple interview configuration form (job title, seniority, skills, responsibilities)
+- AI-powered question generation based on role template
+- Auto-generated unique candidate links
+- Support for custom questions
 
-### Phase C: AI Processing
-- ✅ Async background processing (no user wait time)
-- ✅ Groq Whisper transcription (~5s per video)
-- ✅ AI scoring (0-2 per question, 1.0-9.5 overall)
-- ✅ Feedback generation (strengths/weaknesses)
+**B. Candidate Experience**
+- Registration micro-form (name, email, years of experience, salary expectations)
+- Professional video recording interface:
+  - Self-view window
+  - Current question display
+  - Progress tracking (X/5 questions)
+  - 3-minute timer per question
+  - Re-record functionality
+- Submission confirmation with email receipt
 
-### Phase D: Results Delivery
-- ✅ Google Sheets export (one sheet per interview)
-- ✅ Recruiter results email (scores, insights, sheet link)
-- ✅ Results dashboard (sortable candidate table)
+**C. AI & Scoring**
+- Groq Whisper transcription (~5s per video)
+- LLM-based scoring rubric (0-2 per question):
+  - 0 = Poor (off-topic, incoherent)
+  - 1 = Acceptable (basic understanding)
+  - 2 = Excellent (detailed, structured, with examples)
+- Overall grade normalized to 1.0-9.5 scale
+- Auto-generated feedback (strengths, areas to improve)
+- Context-aware evaluation based on role seniority and candidate experience
 
-## 🧪 How to Test
+**D. Outputs & Operations**
+- Google Sheets export (one sheet per interview):
+- Recruiter email notifications with results summary
 
-### 1. Create an Interview
-1. Visit homepage
-2. Paste or Fill in job details (title, skills, etc.)
-3. Click "Generate Interview"
-4. Copy the interview link
+**E. Guardrails (MVP-level)**
+- Basic retention (data expires after 30 days - configurable)
+- Camera/mic permissions check
+- Random question ordering (anti-cheating)
+- Async processing (no user wait time during submission)
 
-### 2. Complete Interview as Candidate
-1. Open interview link
-2. Register with test details
-3. Record answers to 5 questions (speak clearly!)
-4. Submit interview
+## ⚙️ Environment Setup
 
-### 3. View Results
-- **Email:** Check recruiter email (~5 min after submission)
-- **Dashboard:** Visit `/interview/[id]/results`
-- **Google Sheet:** Click link in email
+### Required API Keys (All Free Tier Available)
 
-## ⚙️ Local Setup (For Reviewers)
+1. **Groq API** (Transcription + Scoring)
+   - Sign up: https://console.groq.com
+   - Get API key from dashboard
+   - Add to `.env.local`: `GROQ_API_KEY=your_key`
+
+2. **Resend API** (Email Notifications)
+   - Sign up: https://resend.com
+   - Verify your sender domain or use test mode
+   - Add to `.env.local`: `RESEND_API_KEY=your_key`
+   - **Important:** Update `FROM_EMAIL` in `.env.local` to your verified email
+
+3. **Google Sheets API** (Results Export)
+   - Create project: https://console.cloud.google.com
+   - Enable Google Sheets API
+   - Create Service Account → Download JSON key
+   - Add credentials to `.env.local`:
+```
+     GOOGLE_SERVICE_ACCOUNT_EMAIL=your-service-account@project.iam.gserviceaccount.com
+     GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYOUR_KEY\n-----END PRIVATE KEY-----\n"
+```
+   - Create a Google Sheet and share it with service account email (Editor access)
+   - Add sheet ID to `.env.local`: `GOOGLE_SHEET_ID=your_sheet_id`
+
+4. **Vercel KV & Blob** (Database & Storage)
+   - Auto-configured when deploying to Vercel
+   - For local dev: Create KV database in Vercel dashboard → Copy env vars
+
+### Local Setup
 ```bash
+# Clone repository
+git clone <your-repo-url>
+cd wavvy-mvp
+
 # Install dependencies
 npm install
 
-# Set up environment variables (see .env.example)
+# Copy environment template
 cp .env.example .env.local
+
+# Add your API keys to .env.local (see above)
 
 # Run development server
 npm run dev
 ```
 
-**Required API Keys:**
-- Groq API (free tier: https://console.groq.com)
-- Resend API (free tier: https://resend.com)
-- Google Cloud (Sheets API + Service Account)
-- Vercel KV + Blob (auto-configured on Vercel)
+Visit `http://localhost:3000`
+
+## 🧪 Testing Guide
+
+### Full Flow Test
+
+**1. Create Interview (Recruiter)**
+```
+1. Go to homepage
+2. Paste job description OR fill form manually:
+   - Job Title: "Senior Software Engineer"
+   - Seniority: "Senior"
+   - Skills: "React, TypeScript, System Design"
+   - Responsibilities: "Lead frontend team, architect scalable solutions"
+3. Click "Generate Interview"
+4. Copy interview link
+```
+
+**2. Complete Interview (Candidate)**
+```
+1. Open interview link in new browser/incognito
+2. Register:
+   - Name: "Test Candidate"
+   - Email: "test@example.com"
+   - Years of Experience: 6
+   - Salary Expectations: ₦120,000"
+3. Allow camera/mic permissions
+4. Record answer for each question (speak clearly!)
+5. Click "Next Question" after each recording
+6. Submit interview on final question
+```
+
+**3. View Results (Recruiter)**
+```
+Wait 3-5 minutes for AI processing, then:
+- Visit `/interview/[id]/results` dashboard
+- Check Google Sheet (auto-updated)
+- Check email (if Resend configured)
+```
+
+### Testing Without Email Setup
+
+If you haven't configured Resend:
+- Results still save to database and Google Sheets
+- Access results directly via `/interview/[id]/results` URL
+- Email notifications will fail silently (check console logs)
 
 ## 📁 Project Structure
 ```
@@ -158,72 +239,41 @@ WAVVY-MVP/
 └── tsconfig.json
 ```
 
-## 🎥 Key Features Highlights
-
-### Async Processing
-User submits → instant confirmation → AI processes in background (2-5 min)
-
-### Smart Scoring Rubric
-- 0 = Poor (off-topic, incoherent)
-- 1 = Acceptable (basic understanding)
-- 2 = Excellent (detailed, structured, with examples)
-
-### Professional UX
-- Clean, modern interface
-- Real-time progress tracking
-- Instant feedback
-- Mobile-responsive
-
 ## 🔒 Security & Privacy
 
-- Video uploads secured with Vercel Blob
-- Environment variables for sensitive keys
-- Service account for Google Sheets access
-- Data expires after 30 days (configurable)
+- Video uploads secured via Vercel Blob signed URLs
+- Environment variables for all sensitive keys
+- Service account authentication for Google Sheets
+- Automatic data expiration (30 days default)
+- No candidate data shared without consent
 
-## 📈 Scalability Considerations
+## 🎯 Success Criteria (Phase 1)
 
-- Serverless architecture (auto-scales)
-- Async processing (no blocking)
-- CDN-cached static assets
-- Optimized database queries
+✅ **Recruiter can set up interview in <2 minutes**
+✅ **AI generates relevant questions based on job context**
+✅ **Candidates complete interview without technical issues**
+✅ **Consistent scoring** (same answer → similar score across runs)
+✅ **Stable media capture** across Chrome, Firefox
+✅ **Results auto-export** to Google Sheets with all required columns
+✅ **Processing completes in <5 minutes** per candidate
 
-## 🐛 Known Limitations (MVP)
 
-- No authentication (public interview links)
-- Single recruiter email (no multi-tenant)
-- New sheet per interview (not reused)
-- Limited error retry logic
-- No video playback in dashboard (links only)
+## 🚀 Deployment
 
-## 🚀 Future Enhancements
+**Vercel (Recommended):**
+```bash
+# Install Vercel CLI
+npm i -g vercel
 
-- [ ] Multi-tenant with authentication
-- [ ] Video playback in results dashboard
-- [ ] Real-time status updates (WebSockets)
-- [ ] Bulk candidate comparison
-- [ ] Custom scoring rubrics
-- [ ] Interview scheduling
-- [ ] Payment integration (Stripe)
+# Deploy
+vercel
 
-## 📝 Notes for Reviewers
-
-**Focus Areas:**
-- End-to-end flow (create → record → AI scoring → results)
-- Code organization and TypeScript usage
-- Async processing architecture
-- Error handling
-- User experience
-
-**Testing Tips:**
-- Speak clearly when recording (affects transcription quality)
-- Use the "excellent" example answers for best AI scores
-- Check email spam folder for results (Resend test mode)
-
-## 📧 Contact
-
-For questions about this project: [Your Email]
+# Add environment variables in Vercel dashboard
+# Create KV database in Vercel Storage section
+```
 
 ---
 
-Built as an MVP demonstration of AI-powered interview automation.
+**Built with 100% open-source technologies as an MVP demonstration of AI-powered interview automation.**
+
+**Project Status:** Phase 1 Complete ✅ | Ready for pilot testing with real recruiters
