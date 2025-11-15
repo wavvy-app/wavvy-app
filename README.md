@@ -236,8 +236,7 @@ WAVVY-MVP/
 ├── postcss.config.mjs
 ├── README.md
 ├── requirements.txt
-├── tsconfig.json
-└── vercel.json
+└── tsconfig.json
 
 
 ```
