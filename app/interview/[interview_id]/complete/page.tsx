@@ -40,13 +40,11 @@ export default function CompletePage({
         return;
       }
 
-      if (initializationStarted.current) {
-        return;
-      }
-      
+      if (initializationStarted.current) return;
       initializationStarted.current = true;
 
       try {
+        // Fetch candidate data
         const candidateResponse = await fetch(
           `/api/interview/${interview_id}/candidate?candidate_id=${candidateId}`
         );
@@ -58,46 +56,54 @@ export default function CompletePage({
         const candidateData: CandidateData = await candidateResponse.json();
         setCandidate(candidateData);
 
+        // Fetch interview data
         const interviewResponse = await fetch(`/api/interview/${interview_id}`);
         if (interviewResponse.ok) {
           const interviewData = await interviewResponse.json();
           setInterview(interviewData);
         }
 
-        if (candidateData.status === 'scored') {
+        // Check if already processed
+        if (candidateData.status === 'scored' || candidateData.status === 'submitted') {
           setLoading(false);
           return;
         }
 
-        if (candidateData.status === 'submitted') {
-          setLoading(false);
-          return;
-        }
-
-        const statusResponse = await fetch(
-          `/api/interview/${interview_id}/candidate/status`,
-          {
+        // Update status to 'submitted'
+        try {
+          await fetch(`/api/interview/${interview_id}/candidate/status`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               candidate_id: candidateId,
               status: 'submitted',
             }),
-          }
-        );
-
-        if (!statusResponse.ok) {
-          console.warn('Failed to update status');
+          });
+        } catch (statusError) {
+          console.error('[Complete] Status update error:', statusError);
         }
         
-        fetch(`/api/interview/${interview_id}/process`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ candidate_id: candidateId }),
-        }).catch(err => console.error('Background processing error:', err));
+        // ✅ CRITICAL FIX: Await the process call
+        try {
+          const processResponse = await fetch(
+            `/api/interview/${interview_id}/process`, 
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ candidate_id: candidateId }),
+            }
+          );
+
+          if (!processResponse.ok) {
+            const errorData = await processResponse.json();
+            console.error('[Complete] Processing failed:', errorData);
+          }
+        } catch (processError) {
+          console.error('[Complete] Processing request error:', processError);
+        }
         
       } catch (error) {
-        console.error('Initialization error:', error);
+        console.error('[Complete] Initialization error:', error);
       } finally {
         setLoading(false);
       }
@@ -121,19 +127,10 @@ export default function CompletePage({
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-xl shadow-md p-8 text-center">
+          
           <div className="w-20 h-20 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
-            <svg
-              className="w-10 h-10 text-green-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={3}
-                d="M5 13l4 4L19 7"
-              />
+            <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
             </svg>
           </div>
 
@@ -185,12 +182,8 @@ export default function CompletePage({
                   1
                 </div>
                 <div className="pt-1">
-                  <p className="text-gray-800 font-semibold">
-                    Your interview is under review
-                  </p>
-                  <p className="text-gray-600 text-sm mt-0.5">
-                    Our team is carefully evaluating your responses
-                  </p>
+                  <p className="text-gray-800 font-semibold">Your interview is under review</p>
+                  <p className="text-gray-600 text-sm mt-0.5">Our team is carefully evaluating your responses</p>
                 </div>
               </div>
 
@@ -199,9 +192,7 @@ export default function CompletePage({
                   2
                 </div>
                 <div className="pt-1">
-                  <p className="text-gray-800 font-semibold">
-                    Check your email
-                  </p>
+                  <p className="text-gray-800 font-semibold">Check your email</p>
                   {candidate && (
                     <p className="text-gray-600 text-sm mt-0.5">
                       We'll send confirmation and next steps to <strong className="text-gray-800">{candidate.email}</strong>

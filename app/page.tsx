@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ROLE_TEMPLATES } from '@/lib/roleMapper';
 
 interface FormData {
@@ -45,6 +45,13 @@ export default function Home() {
   const [result, setResult] = useState<InterviewResult | null>(null);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+
+  // FIX #1: Auto-scroll to top when result appears
+  useEffect(() => {
+    if (result) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [result]);
 
   const handleExtract = async () => {
     if (!jobDescription.trim()) {
@@ -444,7 +451,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* UPDATED SECTION - Enhanced UI with original placeholder format */}
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Standard Interview Questions <span className="text-gray-500 font-normal">(Recommended)</span>
@@ -484,53 +490,55 @@ export default function Home() {
         )}
 
         {result && (
-          <div className="bg-white p-8 rounded-xl shadow-md">
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 rounded-lg p-6 mb-6">
+          <>
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 rounded-lg p-6 mb-6 shadow-md">
               <h2 className="text-2xl font-bold text-gray-800 mb-1">Interview Created! 🎉</h2>
-              <p className="text-gray-600 text-sm">Share this link with your candidate to start the interview</p>
-            </div>
-            
-            <div className="mb-6">
-              <label className="block font-semibold mb-3 text-gray-800">Interview Link:</label>
-              <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border-2 border-gray-200 font-mono text-sm break-all mb-4">
-                {result.interview_link}
-              </div>
-              
-              <div className="flex gap-3">
-                <button
-                  onClick={handleCopy}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white rounded-lg font-semibold hover:shadow-lg transition-all transform hover:scale-[1.02] active:scale-100"
-                >
-                  {copied ? '✓ Copied!' : 'Copy Link'}
-                </button>
-                
-                <a
-                  href={result.interview_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all transform hover:scale-[1.02] active:scale-100 text-center"
-                >
-                  View Interview →
-                </a>
-              </div>
-            </div>
-            
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-100">
-              <label className="block font-semibold mb-3 text-gray-800">Generated Questions:</label>
-              <ol className="list-decimal list-inside space-y-2">
-                {result.questions.map((q: string, i: number) => (
-                  <li key={i} className="text-gray-700 leading-relaxed">{q.replace(/^\d+\.\s*/, '')}</li>
-                ))}
-              </ol>
+              <p className="text-gray-700 text-sm">Share this link with your candidate to start the interview</p>
             </div>
 
-            <button
-              onClick={handleCreateAnother}
-              className="mt-6 w-full bg-gradient-to-br from-gray-100 to-gray-200 text-gray-700 p-4 rounded-lg font-semibold hover:from-gray-200 hover:to-gray-300 transition-all"
-            >
-              Create Another Interview
-            </button>
-          </div>
+            <div className="bg-white p-8 rounded-xl shadow-md">
+              <div className="mb-6">
+                <label className="block font-semibold mb-3 text-gray-800">Interview Link:</label>
+                <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border-2 border-gray-200 font-mono text-sm break-all mb-4">
+                  {result.interview_link}
+                </div>
+                
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleCopy}
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white rounded-lg font-semibold hover:shadow-lg transition-all transform hover:scale-[1.02] active:scale-100"
+                  >
+                    {copied ? '✓ Copied!' : 'Copy Link'}
+                  </button>
+                  
+                  <a
+                    href={result.interview_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all transform hover:scale-[1.02] active:scale-100 text-center"
+                  >
+                    View Interview →
+                  </a>
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-100">
+                <label className="block font-semibold mb-3 text-gray-800">Generated Questions:</label>
+                <ol className="list-decimal list-inside space-y-2">
+                  {result.questions.map((q: string, i: number) => (
+                    <li key={i} className="text-gray-700 leading-relaxed">{q.replace(/^\d+\.\s*/, '')}</li>
+                  ))}
+                </ol>
+              </div>
+
+              <button
+                onClick={handleCreateAnother}
+                className="mt-6 w-full bg-gradient-to-br from-gray-100 to-gray-200 text-gray-700 p-4 rounded-lg font-semibold hover:from-gray-200 hover:to-gray-300 transition-all"
+              >
+                Create Another Interview
+              </button>
+            </div>
+          </>
         )}
       </div>
     </div>

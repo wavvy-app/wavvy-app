@@ -1,5 +1,9 @@
 import { kv } from '@vercel/kv';
 
+// ========================================
+// INTERFACES
+// ========================================
+
 interface InterviewData {
   job_title: string;
   industry?: string;
@@ -30,7 +34,8 @@ interface CandidateData {
   registered_at: string;
   recordings?: Recording[];
   results?: InterviewResults;
-  status: 'registered' | 'recording' | 'submitted' | 'scored';
+  status: 'registered' | 'recording' | 'submitted' | 'scored' | 'terminated'; // ✅ Added 'terminated'
+  violations?: Violation[]; // ✅ NEW: Store violations array
 }
 
 interface Recording {
@@ -59,8 +64,23 @@ interface InterviewResults {
   processedAt: string;
 }
 
+// ✅ NEW: Violation interface
+interface Violation {
+  type: 'NO_FACE' | 'MULTIPLE_FACES' | 'LOOKING_AWAY' | 'CAMERA_OFF' | 'TAB_SWITCH';
+  timestamp: number;
+  message: string;
+}
+
+// ========================================
+// CONSTANTS
+// ========================================
+
 const EXPIRY_DAYS = 30;
 const EXPIRY_SECONDS = EXPIRY_DAYS * 24 * 60 * 60;
+
+// ========================================
+// INTERVIEW FUNCTIONS
+// ========================================
 
 export async function saveInterview(
   interviewId: string, 
@@ -75,6 +95,10 @@ export async function getInterview(
 ): Promise<InterviewData | null> {
   return await kv.get<InterviewData>(`interview:${interviewId}`);
 }
+
+// ========================================
+// CANDIDATE FUNCTIONS
+// ========================================
 
 export async function saveCandidate(
   interviewId: string,
@@ -97,7 +121,7 @@ export async function getCandidate(
 export async function updateCandidateStatus(
   interviewId: string,
   candidateId: string,
-  status: 'recording' | 'submitted' | 'scored'
+  status: 'recording' | 'submitted' | 'scored' | 'terminated' // ✅ Added 'terminated'
 ): Promise<void> {
   const candidate = await getCandidate(interviewId, candidateId);
   
@@ -126,6 +150,10 @@ export async function getCandidatesByInterview(
   return candidates.filter((c): c is CandidateData => c !== null);
 }
 
+// ========================================
+// RECORDING FUNCTIONS
+// ========================================
+
 export async function saveRecording(
   interviewId: string,
   candidateId: string,
@@ -150,10 +178,17 @@ export async function saveRecording(
   }
 
   const key = `candidate:${interviewId}:${candidateId}`;
+  
+  // ✅ FIX: Only set status to 'recording' if it's currently 'registered'
+  // This prevents overwriting 'submitted', 'scored', or 'terminated' status
+  const updatedStatus = candidate.status === 'registered' 
+    ? 'recording' as const 
+    : candidate.status;
+
   await kv.set(key, {
     ...candidate,
     recordings,
-    status: 'recording' as const,
+    status: updatedStatus,  // ← Won't overwrite other statuses
   });
 }
 
@@ -167,8 +202,12 @@ export async function getRecordings(
     return [];
   }
 
-  return (candidate as any).recordings || [];
+  return candidate.recordings || [];
 }
+
+// ========================================
+// RESULTS FUNCTIONS
+// ========================================
 
 export async function saveInterviewResults(
   interviewId: string,
@@ -200,7 +239,56 @@ export async function getInterviewResults(
     return null;
   }
   
-  return (candidate as any).results || null;
+  return candidate.results || null;
 }
 
-export type { InterviewData, CandidateData, Recording, InterviewResults };
+// ========================================
+// ✅ NEW: VIOLATION FUNCTIONS
+// ========================================
+
+export async function saveViolation(
+  interviewId: string,
+  candidateId: string,
+  violation: Violation
+): Promise<void> {
+  const candidate = await getCandidate(interviewId, candidateId);
+  
+  if (!candidate) {
+    throw new Error('Candidate not found');
+  }
+
+  const violations = candidate.violations || [];
+  violations.push(violation);
+
+  const key = `candidate:${interviewId}:${candidateId}`;
+  
+  await kv.set(key, {
+    ...candidate,
+    violations,
+  });
+}
+
+export async function getViolations(
+  interviewId: string,
+  candidateId: string
+): Promise<Violation[]> {
+  const candidate = await getCandidate(interviewId, candidateId);
+  
+  if (!candidate) {
+    return [];
+  }
+  
+  return candidate.violations || [];
+}
+
+// ========================================
+// EXPORTS
+// ========================================
+
+export type { 
+  InterviewData, 
+  CandidateData, 
+  Recording, 
+  InterviewResults, 
+  Violation // ✅ Added to exports
+};

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
-import { saveRecording, getCandidate } from '@/lib/db';
+import { getCandidate } from '@/lib/db';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -17,7 +17,6 @@ export async function POST(
       body,
       request: req,
       onBeforeGenerateToken: async (pathname) => {
-        // Validate the upload request
         const { searchParams } = new URL(req.url);
         const candidateId = searchParams.get('candidate_id');
         const questionIndex = searchParams.get('question_index');
@@ -40,30 +39,12 @@ export async function POST(
           }),
         };
       },
-      onUploadCompleted: async ({ blob, tokenPayload }) => {
-        // Save recording metadata after successful upload
-        try {
-          const payload = JSON.parse(tokenPayload || '{}');
-          
-          await saveRecording(
-            payload.interview_id,
-            payload.candidate_id,
-            {
-              question_index: parseInt(payload.question_index),
-              video_url: blob.url,
-              duration: 0,
-              uploaded_at: new Date().toISOString(),
-            }
-          );
-        } catch (error) {
-          console.error('Failed to save recording metadata:', error);
-        }
-      },
+      // ✅ Removed onUploadCompleted - client calls /save-recording explicitly
     });
 
     return NextResponse.json(jsonResponse);
   } catch (error: any) {
-    console.error('Upload error:', error);
+    console.error('[Upload] Error:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to upload video' },
       { status: 500 }
@@ -92,7 +73,7 @@ export async function GET(
  
     return NextResponse.json({ recordings });
   } catch (error: any) {
-    console.error('Get recordings error:', error);
+    console.error('[Upload] Get recordings error:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch recordings' },
       { status: 500 }

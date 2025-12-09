@@ -306,7 +306,7 @@ export default function RegisterPage({
                 />
                 <div className="flex-1">
                   <span className="text-sm text-gray-700 group-hover:text-gray-900">
-                    I consent to being recorded during this interview. My video responses will be stored securely and used solely for recruitment purposes. <span className="text-red-500">*</span>
+                    I consent to being recorded during this interview. My video responses will be stored securely and used solely for recruitment purposes. <strong>This interview uses AI monitoring to ensure fairness.</strong> <span className="text-red-500">*</span>
                   </span>
                   <p className="text-xs text-gray-500 mt-1.5">
                     Video recordings are retained for review purposes and may be deleted after the recruitment process concludes.
