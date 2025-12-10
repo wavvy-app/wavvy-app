@@ -4,6 +4,9 @@ import { saveInterview } from '@/lib/db';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+// Fixed admin question - always appears first
+const FIXED_ADMIN_QUESTION = "To begin, please look at the camera and state your full name and the role you are applying for.";
+
 interface InterviewConfig {
   job_title: string;
   industry?: string;
@@ -14,7 +17,8 @@ interface InterviewConfig {
   role_template: string;
   key_responsibilities?: string[];
   required_skills?: string[];
-  custom_questions?: string;
+  opening_questions?: string;  // NEW: String from textarea
+  closing_questions?: string;  // NEW: String from textarea
   num_questions: number;
 }
 
@@ -46,14 +50,41 @@ export async function POST(req: NextRequest) {
     });
 
     const questionsText = completion.choices[0]?.message?.content || '';
-    const questions = parseQuestions(questionsText);
+    const aiQuestions = parseQuestions(questionsText);
 
-    if (questions.length < 3) {
+    if (aiQuestions.length < 3) {
       return NextResponse.json(
         { error: "Failed to generate valid questions. Please try again." },
         { status: 500 }
       );
     }
+
+    // Parse opening and closing questions from textareas
+    const openingQuestions = config.opening_questions
+      ? config.opening_questions
+          .split('\n')
+          .map(q => q.trim())
+          .filter(q => q.length > 0)
+      : [];
+
+    const closingQuestions = config.closing_questions
+      ? config.closing_questions
+          .split('\n')
+          .map(q => q.trim())
+          .filter(q => q.length > 0)
+      : [];
+
+    // Concatenate all questions in order:
+    // 1. Fixed admin question (always first)
+    // 2. Opening questions (if any)
+    // 3. AI-generated questions (5 questions)
+    // 4. Closing questions (if any)
+    const allQuestions = [
+      FIXED_ADMIN_QUESTION,
+      ...openingQuestions,
+      ...aiQuestions,
+      ...closingQuestions
+    ];
 
     const interviewId = crypto.randomUUID().slice(0, 8);
     const baseUrl = getBaseUrl();
@@ -69,14 +100,15 @@ export async function POST(req: NextRequest) {
       role_template: config.role_template,
       key_responsibilities: config.key_responsibilities,
       required_skills: config.required_skills,
-      custom_questions: config.custom_questions,
-      questions: questions,
+      opening_questions: config.opening_questions,
+      closing_questions: config.closing_questions,
+      questions: allQuestions,  // Save ALL questions including fixed, opening, AI, closing
       created_at: new Date().toISOString()
     });
 
     return NextResponse.json({
       interview_id: interviewId,
-      questions: questions,
+      questions: allQuestions,  // Return complete question list
       interview_link: interviewLink
     });
 
@@ -117,8 +149,6 @@ ${contextInfo}
 
 Role Template: ${config.role_template}
 
-Custom Questions / Topics: ${config.custom_questions || 'None'}
-
 YOUR TASK: Generate ${config.num_questions} targeted interview questions for this role.
 
 GUIDELINES:
@@ -149,10 +179,7 @@ GUIDELINES:
    - If including a follow-up, add it in parentheses on the SAME line as the main question
    - Keep follow-ups concise (typically around 10-15 words)
 
-6. Custom Topics
-   - If custom topics are provided, incorporate them naturally into questions
-
-7. Question Quality Standards
+6. Question Quality Standards
    - Questions should be concise and answerable in a 2-3 minute video response (typically 40-60 words)
    - Avoid compound questions (multiple questions in one)
    - Avoid generic questions like "Tell me about yourself" or "What are your strengths?"

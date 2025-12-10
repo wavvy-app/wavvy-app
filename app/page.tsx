@@ -3,6 +3,17 @@
 import { useState, useEffect } from 'react';
 import { ROLE_TEMPLATES } from '@/lib/roleMapper';
 
+// Define your defaults constants so you can reuse them easily
+const DEFAULT_OPENING = `Tell me about yourself and your professional background.
+
+Why are you interested in this role and our company?`;
+
+const DEFAULT_CLOSING = `What are your salary expectations for this role?
+
+When would you be available to start if offered the position?
+
+Do you have any questions for us?`;
+
 interface FormData {
   job_title: string;
   industry: string;
@@ -13,7 +24,8 @@ interface FormData {
   role_template: string;
   key_responsibilities: string[];
   required_skills: string[];
-  custom_questions: string;
+  opening_questions: string;
+  closing_questions: string;
 }
 
 interface InterviewResult {
@@ -38,7 +50,9 @@ export default function Home() {
     role_template: 'General Professional',
     key_responsibilities: [],
     required_skills: [],
-    custom_questions: '',
+    // FIX: Set defaults here instead of useEffect
+    opening_questions: DEFAULT_OPENING,
+    closing_questions: DEFAULT_CLOSING,
   });
   
   const [loading, setLoading] = useState(false);
@@ -46,12 +60,14 @@ export default function Home() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
 
-  // FIX #1: Auto-scroll to top when result appears
   useEffect(() => {
     if (result) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [result]);
+
+  // REMOVED THE useEffect THAT CAUSED THE ZOMBIE TEXT BUG
+  // Users can now freely edit or delete the opening/closing questions
 
   const handleExtract = async () => {
     if (!jobDescription.trim()) {
@@ -90,7 +106,9 @@ export default function Home() {
         required_skills: extractedData.required_skills?.length > 0 
           ? extractedData.required_skills 
           : [''],
-        custom_questions: '',
+        // FIX: Add defaults here too for the extraction flow
+        opening_questions: DEFAULT_OPENING,
+        closing_questions: DEFAULT_CLOSING,
       });
       
       setStep('review');
@@ -163,7 +181,9 @@ export default function Home() {
       role_template: 'General Professional',
       key_responsibilities: [],
       required_skills: [],
-      custom_questions: '',
+      // FIX: Reset to defaults, not empty strings
+      opening_questions: DEFAULT_OPENING,
+      closing_questions: DEFAULT_CLOSING,
     });
   };
 
@@ -275,7 +295,7 @@ export default function Home() {
         )}
 
         {step === 'review' && !result && (
-          <form onSubmit={handleSubmit} className="bg-white p-8 rounded-xl shadow-md space-y-6">
+          <div className="bg-white p-8 rounded-xl shadow-md space-y-6">
             <div className="flex items-center justify-between pb-4 border-b-2 border-gray-100">
               <h2 className="text-xl font-semibold text-gray-800">Review & Edit Details</h2>
               <button
@@ -451,25 +471,77 @@ export default function Home() {
               </div>
             </div>
 
-            <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700">
-                Standard Interview Questions <span className="text-gray-500 font-normal">(Recommended)</span>
-              </label>
-
-              <p className="text-sm text-gray-600 mb-3">
-                Add opening questions to make the interview feel complete and natural.
+            {/* Fixed Admin Question Display */}
+            <div className="bg-gray-50 p-5 rounded-lg border-2 border-gray-200 opacity-80 hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-2 py-1 bg-gray-200 text-gray-600 text-[10px] font-bold uppercase tracking-wider rounded">System Required</span>
+                <span className="text-xs text-gray-400">Verifies identity & microphone</span>
+              </div>
+              <p className="text-sm text-gray-700 font-medium font-mono bg-white p-3 rounded border border-gray-100">
+                "To begin, please look at the camera and state your full name and the role you are applying for."
               </p>
+            </div>
 
+            {/* Opening Questions Section - WITH CLEAR BUTTON */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Opening Questions <span className="text-gray-500 font-normal">(Edit as needed)</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setFormData({...formData, opening_questions: ''})}
+                  className="text-xs text-gray-600 hover:text-red-600 transition-colors font-medium"
+                >
+                  Clear all
+                </button>
+              </div>
+              <p className="text-sm text-gray-600 mb-3">
+                Warm-up questions to help candidates settle in. These are pre-filled but you can customize them.
+              </p>
               <textarea
-                value={formData.custom_questions}
-                onChange={(e) => setFormData({...formData, custom_questions: e.target.value})}
+                value={formData.opening_questions}
+                onChange={(e) => setFormData({...formData, opening_questions: e.target.value})}
                 className="w-full border-2 border-gray-200 p-4 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition-all"
-                rows={8}
-                placeholder="Tell me about yourself.&#10;&#10;Why are you interested in this role and our company?&#10;&#10;Walk me through your relevant experience.&#10;&#10;What are your greatest strengths and how would they benefit our team?&#10;&#10;Tell me about a challenge you faced at work and how you overcame it.&#10;&#10;Do you have any questions for us?"
+                rows={6}
               />
-              
               <p className="text-xs text-gray-500 mt-2">
-                💡 One question per line • Added to AI-generated questions
+                💡 One question per line • These appear before AI-generated questions
+              </p>
+            </div>
+
+            {/* AI Questions Info Box */}
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <p className="text-sm text-gray-700 font-medium">
+                ✨ AI will generate 5 role-specific questions based on the job details above
+              </p>
+            </div>
+
+            {/* Closing Questions Section - WITH CLEAR BUTTON */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Closing Questions <span className="text-gray-500 font-normal">(Edit as needed)</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setFormData({...formData, closing_questions: ''})}
+                  className="text-xs text-gray-600 hover:text-red-600 transition-colors font-medium"
+                >
+                  Clear all
+                </button>
+              </div>
+              <p className="text-sm text-gray-600 mb-3">
+                Final questions to assess expectations and availability. These are pre-filled but you can customize them.
+              </p>
+              <textarea
+                value={formData.closing_questions}
+                onChange={(e) => setFormData({...formData, closing_questions: e.target.value})}
+                className="w-full border-2 border-gray-200 p-4 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition-all"
+                rows={5}
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                💡 One question per line • These appear after all other questions
               </p>
             </div>
 
@@ -480,13 +552,14 @@ export default function Home() {
             )}
 
             <button
-              type="submit"
+              type="button"
+              onClick={handleSubmit}
               disabled={loading}
               className="w-full bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white p-4 rounded-lg font-semibold hover:shadow-lg disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] active:scale-100"
             >
               {loading ? 'Generating Interview...' : 'Generate Interview Questions'}
             </button>
-          </form>
+          </div>
         )}
 
         {result && (
@@ -523,7 +596,9 @@ export default function Home() {
               </div>
               
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-100">
-                <label className="block font-semibold mb-3 text-gray-800">Generated Questions:</label>
+                <label className="block font-semibold mb-3 text-gray-800">
+                  Complete Interview ({result.questions.length} questions):
+                </label>
                 <ol className="list-decimal list-inside space-y-2">
                   {result.questions.map((q: string, i: number) => (
                     <li key={i} className="text-gray-700 leading-relaxed">{q.replace(/^\d+\.\s*/, '')}</li>

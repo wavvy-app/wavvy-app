@@ -14,7 +14,8 @@ interface InterviewData {
   role_template: string;
   key_responsibilities?: string[];
   required_skills?: string[];
-  custom_questions?: string;
+  opening_questions?: string;  // NEW: Replaces custom_questions
+  closing_questions?: string;  // NEW: Added for closing questions
   questions: string[];
   created_at: string;
 }
@@ -34,8 +35,8 @@ interface CandidateData {
   registered_at: string;
   recordings?: Recording[];
   results?: InterviewResults;
-  status: 'registered' | 'recording' | 'submitted' | 'scored' | 'terminated'; // ✅ Added 'terminated'
-  violations?: Violation[]; // ✅ NEW: Store violations array
+  status: 'registered' | 'recording' | 'submitted' | 'scored' | 'terminated';
+  violations?: Violation[];
 }
 
 interface Recording {
@@ -64,7 +65,6 @@ interface InterviewResults {
   processedAt: string;
 }
 
-// ✅ NEW: Violation interface
 interface Violation {
   type: 'NO_FACE' | 'MULTIPLE_FACES' | 'LOOKING_AWAY' | 'CAMERA_OFF' | 'TAB_SWITCH';
   timestamp: number;
@@ -121,7 +121,7 @@ export async function getCandidate(
 export async function updateCandidateStatus(
   interviewId: string,
   candidateId: string,
-  status: 'recording' | 'submitted' | 'scored' | 'terminated' // ✅ Added 'terminated'
+  status: 'recording' | 'submitted' | 'scored' | 'terminated'
 ): Promise<void> {
   const candidate = await getCandidate(interviewId, candidateId);
   
@@ -179,7 +179,7 @@ export async function saveRecording(
 
   const key = `candidate:${interviewId}:${candidateId}`;
   
-  // ✅ FIX: Only set status to 'recording' if it's currently 'registered'
+  // Only set status to 'recording' if it's currently 'registered'
   // This prevents overwriting 'submitted', 'scored', or 'terminated' status
   const updatedStatus = candidate.status === 'registered' 
     ? 'recording' as const 
@@ -188,7 +188,7 @@ export async function saveRecording(
   await kv.set(key, {
     ...candidate,
     recordings,
-    status: updatedStatus,  // ← Won't overwrite other statuses
+    status: updatedStatus,
   });
 }
 
@@ -243,7 +243,7 @@ export async function getInterviewResults(
 }
 
 // ========================================
-// ✅ NEW: VIOLATION FUNCTIONS
+// VIOLATION FUNCTIONS
 // ========================================
 
 export async function saveViolation(
@@ -290,5 +290,5 @@ export type {
   CandidateData, 
   Recording, 
   InterviewResults, 
-  Violation // ✅ Added to exports
+  Violation
 };
