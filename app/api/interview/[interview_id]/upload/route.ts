@@ -39,7 +39,6 @@ export async function POST(
           }),
         };
       },
-      // ✅ Removed onUploadCompleted - client calls /save-recording explicitly
     });
 
     return NextResponse.json(jsonResponse);

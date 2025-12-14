@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { ROLE_TEMPLATES } from '@/lib/roleMapper';
 
-// Define your defaults constants so you can reuse them easily
 const DEFAULT_OPENING = `Tell me about yourself and your professional background.
 
 Why are you interested in this role and our company?`;
@@ -50,7 +49,6 @@ export default function Home() {
     role_template: 'General Professional',
     key_responsibilities: [],
     required_skills: [],
-    // FIX: Set defaults here instead of useEffect
     opening_questions: DEFAULT_OPENING,
     closing_questions: DEFAULT_CLOSING,
   });
@@ -65,9 +63,6 @@ export default function Home() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [result]);
-
-  // REMOVED THE useEffect THAT CAUSED THE ZOMBIE TEXT BUG
-  // Users can now freely edit or delete the opening/closing questions
 
   const handleExtract = async () => {
     if (!jobDescription.trim()) {
@@ -106,7 +101,6 @@ export default function Home() {
         required_skills: extractedData.required_skills?.length > 0 
           ? extractedData.required_skills 
           : [''],
-        // FIX: Add defaults here too for the extraction flow
         opening_questions: DEFAULT_OPENING,
         closing_questions: DEFAULT_CLOSING,
       });
@@ -134,7 +128,7 @@ export default function Home() {
     }
     
     if (cleanedData.key_responsibilities.length === 0 && cleanedData.required_skills.length === 0) {
-      setError('Please add at least one responsibility or skill to generate relevant interview questions');
+      setError('Add at least one responsibility or skill to generate relevant questions. Scroll up to the "Key Responsibilities" or "Required Skills" section.');
       return;
     }
     
@@ -181,7 +175,6 @@ export default function Home() {
       role_template: 'General Professional',
       key_responsibilities: [],
       required_skills: [],
-      // FIX: Reset to defaults, not empty strings
       opening_questions: DEFAULT_OPENING,
       closing_questions: DEFAULT_CLOSING,
     });
@@ -198,6 +191,10 @@ export default function Home() {
     setJobDescription('');
     resetForm();
   };
+
+  const isFormValid = 
+    formData.job_title.trim() !== '' && 
+    (formData.key_responsibilities.some(r => r.trim()) || formData.required_skills.some(s => s.trim()));
 
   const updateResponsibility = (index: number, value: string) => {
     const updated = [...formData.key_responsibilities];
@@ -259,7 +256,7 @@ export default function Home() {
               <textarea
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
-                className="w-full border-2 border-gray-200 p-4 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition-all"
+                className="w-full border border-gray-200 p-4 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent"
                 rows={12}
                 placeholder="Example:&#10;&#10;We're looking for a Retail Sales Assistant to join our team...&#10;&#10;Responsibilities:&#10;- Customer service&#10;- Sales&#10;- Stock management&#10;&#10;Requirements:&#10;- 1+ years experience&#10;- Strong communication skills&#10;..."
               />
@@ -316,7 +313,7 @@ export default function Home() {
                     type="text"
                     value={formData.job_title}
                     onChange={(e) => setFormData({...formData, job_title: e.target.value})}
-                    className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition-all"
+                    className="w-full border border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent"
                     required
                   />
                 </div>
@@ -328,7 +325,7 @@ export default function Home() {
                       type="text"
                       value={formData.industry}
                       onChange={(e) => setFormData({...formData, industry: e.target.value})}
-                      className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition-all"
+                      className="w-full border border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent"
                       placeholder="e.g., Retail"
                     />
                   </div>
@@ -339,7 +336,7 @@ export default function Home() {
                       type="text"
                       value={formData.location}
                       onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                      className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition-all"
+                      className="w-full border border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent"
                       placeholder="e.g., London, UK"
                     />
                     <p className="text-xs text-gray-500 mt-1.5">
@@ -354,7 +351,7 @@ export default function Home() {
                     <select
                       value={formData.seniority}
                       onChange={(e) => setFormData({...formData, seniority: e.target.value})}
-                      className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition-all"
+                      className="w-full border border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent"
                     >
                       <option>Entry-level</option>
                       <option>Junior</option>
@@ -369,7 +366,7 @@ export default function Home() {
                     <select
                       value={formData.job_type}
                       onChange={(e) => setFormData({...formData, job_type: e.target.value})}
-                      className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition-all"
+                      className="w-full border border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent"
                     >
                       <option>Full-time</option>
                       <option>Part-time</option>
@@ -385,7 +382,7 @@ export default function Home() {
                     <select
                       value={formData.work_model}
                       onChange={(e) => setFormData({...formData, work_model: e.target.value})}
-                      className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition-all"
+                      className="w-full border border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent"
                     >
                       <option>Remote</option>
                       <option>Hybrid</option>
@@ -398,7 +395,7 @@ export default function Home() {
                     <select
                       value={formData.role_template}
                       onChange={(e) => setFormData({...formData, role_template: e.target.value})}
-                      className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition-all"
+                      className="w-full border border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent"
                     >
                       {ROLE_TEMPLATES.map((role) => (
                         <option key={role} value={role}>
@@ -413,6 +410,11 @@ export default function Home() {
 
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">Key Responsibilities</label>
+              {formData.key_responsibilities.length === 0 && (
+                <p className="text-sm text-gray-500 italic mb-2">
+                  No responsibilities detected. Add some manually below.
+                </p>
+              )}
               <div className="space-y-2">
                 {formData.key_responsibilities.map((resp, index) => (
                   <div key={index} className="flex gap-2">
@@ -420,7 +422,7 @@ export default function Home() {
                       type="text"
                       value={resp}
                       onChange={(e) => updateResponsibility(index, e.target.value)}
-                      className="flex-1 border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition-all"
+                      className="flex-1 border border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent"
                     />
                     <button
                       type="button"
@@ -443,6 +445,11 @@ export default function Home() {
 
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">Required Skills</label>
+              {formData.required_skills.length === 0 && (
+                <p className="text-sm text-gray-500 italic mb-2">
+                  No skills detected. Add some manually below.
+                </p>
+              )}
               <div className="space-y-2">
                 {formData.required_skills.map((skill, index) => (
                   <div key={index} className="flex gap-2">
@@ -450,7 +457,7 @@ export default function Home() {
                       type="text"
                       value={skill}
                       onChange={(e) => updateSkill(index, e.target.value)}
-                      className="flex-1 border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition-all"
+                      className="flex-1 border border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent"
                     />
                     <button
                       type="button"
@@ -471,18 +478,16 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Fixed Admin Question Display */}
             <div className="bg-gray-50 p-5 rounded-lg border-2 border-gray-200 opacity-80 hover:opacity-100 transition-opacity">
               <div className="flex items-center gap-2 mb-2">
                 <span className="px-2 py-1 bg-gray-200 text-gray-600 text-[10px] font-bold uppercase tracking-wider rounded">System Required</span>
                 <span className="text-xs text-gray-400">Verifies identity & microphone</span>
               </div>
-              <p className="text-sm text-gray-700 font-medium font-mono bg-white p-3 rounded border border-gray-100">
+              <p className="text-sm text-gray-800 font-medium font-mono bg-white p-3 rounded border border-gray-100">
                 "To begin, please look at the camera and state your full name and the role you are applying for."
               </p>
             </div>
 
-            {/* Opening Questions Section - WITH CLEAR BUTTON */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-medium text-gray-700">
@@ -502,7 +507,8 @@ export default function Home() {
               <textarea
                 value={formData.opening_questions}
                 onChange={(e) => setFormData({...formData, opening_questions: e.target.value})}
-                className="w-full border-2 border-gray-200 p-4 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition-all"
+                maxLength={1000}
+                className="w-full border border-gray-200 p-4 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent"
                 rows={6}
               />
               <p className="text-xs text-gray-500 mt-2">
@@ -510,14 +516,12 @@ export default function Home() {
               </p>
             </div>
 
-            {/* AI Questions Info Box */}
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 shadow-sm">
               <p className="text-sm text-gray-700 font-medium">
                 ✨ AI will generate 5 role-specific questions based on the job details above
               </p>
             </div>
 
-            {/* Closing Questions Section - WITH CLEAR BUTTON */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-medium text-gray-700">
@@ -537,7 +541,8 @@ export default function Home() {
               <textarea
                 value={formData.closing_questions}
                 onChange={(e) => setFormData({...formData, closing_questions: e.target.value})}
-                className="w-full border-2 border-gray-200 p-4 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition-all"
+                maxLength={1000}
+                className="w-full border border-gray-200 p-4 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent"
                 rows={5}
               />
               <p className="text-xs text-gray-500 mt-2">
@@ -554,7 +559,7 @@ export default function Home() {
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={loading}
+              disabled={loading || !isFormValid}
               className="w-full bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white p-4 rounded-lg font-semibold hover:shadow-lg disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] active:scale-100"
             >
               {loading ? 'Generating Interview...' : 'Generate Interview Questions'}

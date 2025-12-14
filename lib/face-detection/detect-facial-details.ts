@@ -1,9 +1,4 @@
-// lib/proctoring/detect-facial-details.ts
 import { FaceLandmarker, FilesetResolver, FaceLandmarkerResult } from '@mediapipe/tasks-vision';
-
-// ============================================================================
-// TYPES - What we detect (RAW DATA ONLY)
-// ============================================================================
 
 export interface FaceBox {
   x: number;
@@ -25,11 +20,8 @@ export type HeadPose =
   | 'LOOKING_RIGHT';
 
 export interface FaceDetectionResult {
-  // Detection metadata
   timestamp: number;
   frameId: number;
-  
-  // What we detected
   faceCount: number;
   faces: Array<{
     landmarks: {
@@ -40,15 +32,11 @@ export interface FaceDetectionResult {
     boundingBox: FaceBox;
     headPose: HeadPose;
     metrics: {
-      yaw: number;      // -1 to 1 (left to right)
-      pitch: number;    // -1 to 1 (up to down)
+      yaw: number;
+      pitch: number;
     };
   }>;
 }
-
-// ============================================================================
-// CONFIGURATION
-// ============================================================================
 
 const HEAD_POSE_THRESHOLDS = {
   YAW_LEFT: 0.25,
@@ -56,10 +44,6 @@ const HEAD_POSE_THRESHOLDS = {
   PITCH_UP: -0.1,
   PITCH_DOWN: 0.15
 };
-
-// ============================================================================
-// MEDIAPIPE INITIALIZATION
-// ============================================================================
 
 let faceLandmarker: FaceLandmarker | null = null;
 let isInitialized = false;
@@ -88,10 +72,6 @@ async function initializeFaceLandmarker(): Promise<void> {
   isInitialized = true;
 }
 
-// ============================================================================
-// PURE HELPER FUNCTIONS (No state, no side effects)
-// ============================================================================
-
 function calculateFaceBox(
   landmarks: Array<{ x: number; y: number }>,
   videoWidth: number,
@@ -116,19 +96,15 @@ function analyzeHeadPose(
   pose: HeadPose;
   metrics: { yaw: number; pitch: number };
 } {
-  // Calculate Yaw (horizontal)
   const faceWidth = rightEar.x - leftEar.x;
   const noseRelX = (nose.x - leftEar.x) / faceWidth;
 
-  // Calculate Pitch (vertical)
   const earYAvg = (leftEar.y + rightEar.y) / 2;
   const noseDrop = nose.y - earYAvg;
 
-  // Normalize metrics to -1 to 1 range
-  const yaw = (noseRelX - 0.5) * 2;  // 0.0->-1, 0.5->0, 1.0->1
+  const yaw = (noseRelX - 0.5) * 2;
   const pitch = noseDrop;
 
-  // Determine pose
   let pose: HeadPose = 'CENTER';
 
   if (noseDrop < HEAD_POSE_THRESHOLDS.PITCH_UP) {
@@ -143,10 +119,6 @@ function analyzeHeadPose(
 
   return { pose, metrics: { yaw, pitch } };
 }
-
-// ============================================================================
-// MAIN DETECTION FUNCTION (PURE - No business logic)
-// ============================================================================
 
 export async function detectFaces(
   video: HTMLVideoElement
@@ -173,7 +145,6 @@ export async function detectFaces(
   const videoWidth = video.videoWidth || video.clientWidth || 640;
   const videoHeight = video.videoHeight || video.clientHeight || 480;
 
-  // No faces detected
   if (!results.faceLandmarks || results.faceLandmarks.length === 0) {
     return {
       timestamp: Date.now(),
@@ -183,9 +154,7 @@ export async function detectFaces(
     };
   }
 
-  // Process all detected faces
   const faces = results.faceLandmarks.map(landmarks => {
-    // MediaPipe indices: nose=1, leftEar=234, rightEar=454
     const noseLandmark = landmarks[1];
     const leftEarLandmark = landmarks[234];
     const rightEarLandmark = landmarks[454];
@@ -227,10 +196,6 @@ export async function detectFaces(
   };
 }
 
-// ============================================================================
-// CONTINUOUS DETECTION (For React hooks)
-// ============================================================================
-
 export interface DetectionCallbacks {
   onDetection: (result: FaceDetectionResult) => void;
   onError?: (error: Error) => void;
@@ -239,7 +204,7 @@ export interface DetectionCallbacks {
 export async function startContinuousDetection(
   video: HTMLVideoElement,
   callbacks: DetectionCallbacks,
-  fps: number = 5 // 5 FPS default
+  fps: number = 5
 ): Promise<() => void> {
   
   await initializeFaceLandmarker();
@@ -249,7 +214,6 @@ export async function startContinuousDetection(
 
   const detect = async () => {
     try {
-      // Skip if same frame
       if (video.currentTime === lastVideoTime) return;
       lastVideoTime = video.currentTime;
 
@@ -261,11 +225,9 @@ export async function startContinuousDetection(
     }
   };
 
-  // Start detection loop
   const interval = 1000 / fps;
   intervalId = window.setInterval(detect, interval) as unknown as number;
 
-  // Return cleanup function
   return () => {
     if (intervalId) {
       clearInterval(intervalId);

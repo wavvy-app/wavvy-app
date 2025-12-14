@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { saveCandidate, getInterview, getCandidate } from '@/lib/db';
-import { generateQuestionOrder } from '@/lib/utils';
 
 export async function POST(
   req: NextRequest,
@@ -56,7 +55,6 @@ export async function POST(
       );
     }
 
-    // Validate consent
     if (!consent_given) {
       return NextResponse.json(
         { error: "Consent to recording is required" },
@@ -65,9 +63,6 @@ export async function POST(
     }
 
     const candidateId = crypto.randomUUID().slice(0, 12);
-
-    // Generate randomized question order for anti-cheating
-    const questionOrder = generateQuestionOrder(interview.questions.length);
 
     const candidateData = {
       interview_id,
@@ -80,7 +75,6 @@ export async function POST(
       location_confirmed: location_confirmed || undefined,
       consent_given: consent_given,
       consent_timestamp: consent_timestamp,
-      question_order: questionOrder,
       registered_at: new Date().toISOString(),
       status: 'registered' as const,
     };

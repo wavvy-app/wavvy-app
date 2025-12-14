@@ -116,6 +116,16 @@ export default function RegisterPage({
     return null;
   };
 
+  const isFormValid = 
+    formData.name.trim() !== '' &&
+    formData.email.trim() !== '' &&
+    /\S+@\S+\.\S+/.test(formData.email) &&
+    formData.years_experience !== '' &&
+    Number(formData.years_experience) >= 0 &&
+    formData.salary_expectations.trim() !== '' &&
+    formData.consent_given &&
+    (!needsLocationConfirmation || formData.location_confirmed);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -195,7 +205,6 @@ export default function RegisterPage({
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4">
       <div className="max-w-2xl mx-auto">
-        {/* Header */}
         <div className="bg-gradient-to-r from-[#667eea] to-[#764ba2] rounded-xl shadow-lg p-8 mb-8 text-center">
           <h1 className="text-3xl font-semibold text-white mb-2 tracking-tight">
             Candidate Registration
@@ -216,7 +225,9 @@ export default function RegisterPage({
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition-all"
+                disabled={submitting}
+                maxLength={100}
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed"
                 placeholder="Oluwaseun Adeyemi"
                 required
               />
@@ -231,7 +242,9 @@ export default function RegisterPage({
                 id="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition-all"
+                disabled={submitting}
+                maxLength={254}
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed"
                 placeholder="oluwaseun@example.com"
                 required
               />
@@ -246,11 +259,12 @@ export default function RegisterPage({
                 id="phone"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition-all"
+                disabled={submitting}
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed"
                 placeholder="0803 456 7890"
               />
               <p className="mt-2 text-xs text-gray-500">
-                Enter as 0803 456 7890 or +234 803 456 7890
+                Format: 0803 456 7890 or +234 803 456 7890
               </p>
             </div>
 
@@ -265,10 +279,14 @@ export default function RegisterPage({
                 step="0.5"
                 value={formData.years_experience}
                 onChange={(e) => setFormData({ ...formData, years_experience: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition-all"
-                placeholder="e.g., 2"
+                disabled={submitting}
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed"
+                placeholder="e.g., 2 or 2.5"
                 required
               />
+              <p className="mt-2 text-xs text-gray-500">
+                Use 0.5 increments (e.g., 1.5 years, 2.5 years)
+              </p>
             </div>
 
             <div>
@@ -280,14 +298,18 @@ export default function RegisterPage({
                 id="salary_expectations"
                 value={formData.salary_expectations}
                 onChange={(e) => setFormData({ ...formData, salary_expectations: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition-all"
+                disabled={submitting}
+                maxLength={100}
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed"
                 placeholder="e.g., ₦150,000 per month"
                 required
               />
+              <p className="mt-2 text-xs text-gray-500">
+                Specify monthly or annual (e.g., "₦150k/month" or "₦1.8M/year")
+              </p>
             </div>
 
-            {/* Combined Consents Section */}
-            <div className="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border-2 border-blue-200 space-y-4">
+            <div className="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm space-y-4">
               <h4 className="font-semibold text-gray-900 text-sm flex items-center">
                 <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -295,13 +317,13 @@ export default function RegisterPage({
                 Required Confirmations
               </h4>
               
-              {/* Consent Checkbox - Always Shown */}
               <label className="flex items-start cursor-pointer group">
                 <input
                   type="checkbox"
                   checked={formData.consent_given}
                   onChange={(e) => setFormData({ ...formData, consent_given: e.target.checked })}
-                  className="mt-1 mr-3 h-5 w-5 text-[#667eea] border-gray-300 rounded focus:ring-[#667eea] cursor-pointer"
+                  disabled={submitting}
+                  className="mt-1 mr-3 h-5 w-5 text-[#667eea] border-gray-300 rounded focus:ring-[#667eea] cursor-pointer disabled:cursor-not-allowed"
                   required
                 />
                 <div className="flex-1">
@@ -314,14 +336,14 @@ export default function RegisterPage({
                 </div>
               </label>
               
-              {/* Location Checkbox - Conditionally Shown */}
               {needsLocationConfirmation && (
                 <label className="flex items-start cursor-pointer group pt-1 border-t border-blue-200">
                   <input
                     type="checkbox"
                     checked={formData.location_confirmed}
                     onChange={(e) => setFormData({ ...formData, location_confirmed: e.target.checked })}
-                    className="mt-1 mr-3 h-5 w-5 text-[#667eea] border-gray-300 rounded focus:ring-[#667eea] cursor-pointer"
+                    disabled={submitting}
+                    className="mt-1 mr-3 h-5 w-5 text-[#667eea] border-gray-300 rounded focus:ring-[#667eea] cursor-pointer disabled:cursor-not-allowed"
                     required
                   />
                   <span className="text-sm text-gray-700 group-hover:text-gray-900 pt-3">
@@ -340,7 +362,7 @@ export default function RegisterPage({
 
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !isFormValid}
               className="w-full px-6 py-4 bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white text-lg font-semibold rounded-lg hover:shadow-xl transition-all shadow-lg disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-100"
             >
               {submitting ? 'Submitting...' : 'Continue to Interview →'}

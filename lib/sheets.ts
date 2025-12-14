@@ -75,11 +75,11 @@ async function ensureHeaders(sheets: any, spreadsheetId: string): Promise<void> 
       range: 'Sheet1!A1:R1',
     });
     
-    if (response.data.values && response.data.values[0] && response.data.values[0][0]) {
+    if (response.data.values?.[0]?.[0]) {
       return;
     }
   } catch (error) {
-    // Headers don't exist, will create them
+    // Headers don't exist
   }
   
   await sheets.spreadsheets.values.update({
@@ -87,52 +87,48 @@ async function ensureHeaders(sheets: any, spreadsheetId: string): Promise<void> 
     range: 'Sheet1!A1',
     valueInputOption: 'RAW',
     requestBody: {
-      values: [
-        [
-          'Name',
-          'Email',
-          'Phone',
-          'Years Experience',
-          'Salary Expectations',
-          'Overall Score (/10)',
-          'Status',
-          'Top Strengths',
-          'Areas to Improve',
-          'Overall Feedback',
-          'Q1 Score',
-          'Q2 Score',
-          'Q3 Score',
-          'Q4 Score',
-          'Q5 Score',
-          'Recording Links',
-          'Submitted At',
-          'Processed At',
-        ],
-      ],
+      values: [[
+        'Name',
+        'Email',
+        'Phone',
+        'Years Experience',
+        'Salary Expectations',
+        'Overall Score (/10)',
+        'Status',
+        'Top Strengths',
+        'Areas to Improve',
+        'Overall Feedback',
+        'Q1 Score',
+        'Q2 Score',
+        'Q3 Score',
+        'Q4 Score',
+        'Q5 Score',
+        'Recording Links',
+        'Submitted At',
+        'Processed At',
+      ]],
     },
   });
   
   await sheets.spreadsheets.batchUpdate({
     spreadsheetId,
     requestBody: {
-      requests: [
-        {
-          repeatCell: {
-            range: {
-              sheetId: 0,
-              startRowIndex: 0,
-              endRowIndex: 1,
-            },
-            cell: {
-              userEnteredFormat: {
-                backgroundColor: { red: 0.4, green: 0.5, blue: 0.9 },
-                textFormat: { bold: true, foregroundColor: { red: 1, green: 1, blue: 1 } },
-              },
-            },
-            fields: 'userEnteredFormat(backgroundColor,textFormat)',
+      requests: [{
+        repeatCell: {
+          range: {
+            sheetId: 0,
+            startRowIndex: 0,
+            endRowIndex: 1,
           },
+          cell: {
+            userEnteredFormat: {
+              backgroundColor: { red: 0.4, green: 0.5, blue: 0.9 },
+              textFormat: { bold: true, foregroundColor: { red: 1, green: 1, blue: 1 } },
+            },
+          },
+          fields: 'userEnteredFormat(backgroundColor,textFormat)',
         },
-      ],
+      }],
     },
   });
 }

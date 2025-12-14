@@ -4,7 +4,6 @@ import { saveInterview } from '@/lib/db';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-// Fixed admin question - always appears first
 const FIXED_ADMIN_QUESTION = "To begin, please look at the camera and state your full name and the role you are applying for.";
 
 interface InterviewConfig {
@@ -17,8 +16,8 @@ interface InterviewConfig {
   role_template: string;
   key_responsibilities?: string[];
   required_skills?: string[];
-  opening_questions?: string;  // NEW: String from textarea
-  closing_questions?: string;  // NEW: String from textarea
+  opening_questions?: string;
+  closing_questions?: string;
   num_questions: number;
 }
 
@@ -59,7 +58,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Parse opening and closing questions from textareas
     const openingQuestions = config.opening_questions
       ? config.opening_questions
           .split('\n')
@@ -74,11 +72,6 @@ export async function POST(req: NextRequest) {
           .filter(q => q.length > 0)
       : [];
 
-    // Concatenate all questions in order:
-    // 1. Fixed admin question (always first)
-    // 2. Opening questions (if any)
-    // 3. AI-generated questions (5 questions)
-    // 4. Closing questions (if any)
     const allQuestions = [
       FIXED_ADMIN_QUESTION,
       ...openingQuestions,
@@ -102,13 +95,13 @@ export async function POST(req: NextRequest) {
       required_skills: config.required_skills,
       opening_questions: config.opening_questions,
       closing_questions: config.closing_questions,
-      questions: allQuestions,  // Save ALL questions including fixed, opening, AI, closing
+      questions: allQuestions,
       created_at: new Date().toISOString()
     });
 
     return NextResponse.json({
       interview_id: interviewId,
-      questions: allQuestions,  // Return complete question list
+      questions: allQuestions,
       interview_link: interviewLink
     });
 

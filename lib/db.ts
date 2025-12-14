@@ -1,9 +1,5 @@
 import { kv } from '@vercel/kv';
 
-// ========================================
-// INTERFACES
-// ========================================
-
 interface InterviewData {
   job_title: string;
   industry?: string;
@@ -14,8 +10,8 @@ interface InterviewData {
   role_template: string;
   key_responsibilities?: string[];
   required_skills?: string[];
-  opening_questions?: string;  // NEW: Replaces custom_questions
-  closing_questions?: string;  // NEW: Added for closing questions
+  opening_questions?: string;
+  closing_questions?: string;
   questions: string[];
   created_at: string;
 }
@@ -31,7 +27,6 @@ interface CandidateData {
   location_confirmed?: boolean;
   consent_given: boolean;
   consent_timestamp: string;
-  question_order: number[];
   registered_at: string;
   recordings?: Recording[];
   results?: InterviewResults;
@@ -71,16 +66,8 @@ interface Violation {
   message: string;
 }
 
-// ========================================
-// CONSTANTS
-// ========================================
-
 const EXPIRY_DAYS = 30;
 const EXPIRY_SECONDS = EXPIRY_DAYS * 24 * 60 * 60;
-
-// ========================================
-// INTERVIEW FUNCTIONS
-// ========================================
 
 export async function saveInterview(
   interviewId: string, 
@@ -95,10 +82,6 @@ export async function getInterview(
 ): Promise<InterviewData | null> {
   return await kv.get<InterviewData>(`interview:${interviewId}`);
 }
-
-// ========================================
-// CANDIDATE FUNCTIONS
-// ========================================
 
 export async function saveCandidate(
   interviewId: string,
@@ -150,10 +133,6 @@ export async function getCandidatesByInterview(
   return candidates.filter((c): c is CandidateData => c !== null);
 }
 
-// ========================================
-// RECORDING FUNCTIONS
-// ========================================
-
 export async function saveRecording(
   interviewId: string,
   candidateId: string,
@@ -178,9 +157,6 @@ export async function saveRecording(
   }
 
   const key = `candidate:${interviewId}:${candidateId}`;
-  
-  // Only set status to 'recording' if it's currently 'registered'
-  // This prevents overwriting 'submitted', 'scored', or 'terminated' status
   const updatedStatus = candidate.status === 'registered' 
     ? 'recording' as const 
     : candidate.status;
@@ -204,10 +180,6 @@ export async function getRecordings(
 
   return candidate.recordings || [];
 }
-
-// ========================================
-// RESULTS FUNCTIONS
-// ========================================
 
 export async function saveInterviewResults(
   interviewId: string,
@@ -241,10 +213,6 @@ export async function getInterviewResults(
   
   return candidate.results || null;
 }
-
-// ========================================
-// VIOLATION FUNCTIONS
-// ========================================
 
 export async function saveViolation(
   interviewId: string,
@@ -280,10 +248,6 @@ export async function getViolations(
   
   return candidate.violations || [];
 }
-
-// ========================================
-// EXPORTS
-// ========================================
 
 export type { 
   InterviewData, 

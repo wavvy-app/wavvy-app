@@ -44,7 +44,6 @@ export default function CompletePage({
       initializationStarted.current = true;
 
       try {
-        // Fetch candidate data
         const candidateResponse = await fetch(
           `/api/interview/${interview_id}/candidate?candidate_id=${candidateId}`
         );
@@ -56,20 +55,17 @@ export default function CompletePage({
         const candidateData: CandidateData = await candidateResponse.json();
         setCandidate(candidateData);
 
-        // Fetch interview data
         const interviewResponse = await fetch(`/api/interview/${interview_id}`);
         if (interviewResponse.ok) {
           const interviewData = await interviewResponse.json();
           setInterview(interviewData);
         }
 
-        // Check if already processed
         if (candidateData.status === 'scored' || candidateData.status === 'submitted') {
           setLoading(false);
           return;
         }
 
-        // Update status to 'submitted'
         try {
           await fetch(`/api/interview/${interview_id}/candidate/status`, {
             method: 'PATCH',
@@ -80,10 +76,9 @@ export default function CompletePage({
             }),
           });
         } catch (statusError) {
-          console.error('[Complete] Status update error:', statusError);
+          console.error('Status update failed:', statusError);
         }
         
-        // ✅ CRITICAL FIX: Await the process call
         try {
           const processResponse = await fetch(
             `/api/interview/${interview_id}/process`, 
@@ -96,14 +91,14 @@ export default function CompletePage({
 
           if (!processResponse.ok) {
             const errorData = await processResponse.json();
-            console.error('[Complete] Processing failed:', errorData);
+            console.error('Processing failed:', errorData);
           }
         } catch (processError) {
-          console.error('[Complete] Processing request error:', processError);
+          console.error('Processing request error:', processError);
         }
         
       } catch (error) {
-        console.error('[Complete] Initialization error:', error);
+        console.error('Initialization error:', error);
       } finally {
         setLoading(false);
       }

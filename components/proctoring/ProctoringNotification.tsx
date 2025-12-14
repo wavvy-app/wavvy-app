@@ -1,49 +1,38 @@
-// components/proctoring/ProctoringNotification.tsx
-'use client'
+'use client';
 
-import { useEffect } from 'react'
-import type { StrikeNotification } from '@/hooks/useStrikeSystem'
+import { useEffect } from 'react';
+import type { StrikeNotification } from '@/hooks/useStrikeSystem';
 
 interface ProctoringNotificationProps {
-  notification: StrikeNotification | null
-  onDismiss?: () => void
+  notification: StrikeNotification | null;
+  onDismiss?: () => void;
 }
 
-/**
- * ProctoringNotification
- *
- * - Renders a toast for warning/final severities
- * - Renders a blocking modal for terminal severity
- * - Uses `dismissible` and `autoDismissMs` behavior from the hook
- */
 export default function ProctoringNotification({
   notification,
   onDismiss
 }: ProctoringNotificationProps) {
-  if (!notification) return null
+  if (!notification) return null;
 
-  const { severity, title, body, dismissible } = notification
-  const isTerminal = severity === 'terminal'
+  const { severity, title, body, dismissible } = notification;
+  const isTerminal = severity === 'terminal';
 
-  // Allow Escape to dismiss only when dismissible and non-terminal
   useEffect(() => {
-    if (!dismissible || !onDismiss) return
+    if (!dismissible || !onDismiss) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onDismiss()
+        onDismiss();
       }
-    }
+    };
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [dismissible, onDismiss])
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [dismissible, onDismiss]);
 
-  // Shared content
   const content = (
     <div className="w-full max-w-md rounded-xl bg-white shadow-xl border border-gray-200 px-5 py-4">
       <div className="flex items-start gap-3">
-        {/* Icon by severity */}
         <div className="mt-1 text-2xl">
           {severity === 'warning' && '⚠️'}
           {severity === 'final' && '⚠️'}
@@ -78,9 +67,8 @@ export default function ProctoringNotification({
         )}
       </div>
     </div>
-  )
+  );
 
-  // Toast (non-blocking) for warning/final
   if (!isTerminal) {
     return (
       <div
@@ -89,10 +77,9 @@ export default function ProctoringNotification({
       >
         <div className="pointer-events-auto">{content}</div>
       </div>
-    )
+    );
   }
 
-  // Modal (blocking) for terminal
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
@@ -102,5 +89,5 @@ export default function ProctoringNotification({
     >
       {content}
     </div>
-  )
+  );
 }

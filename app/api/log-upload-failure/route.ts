@@ -13,7 +13,6 @@ export async function POST(req: NextRequest) {
   try {
     const body: UploadFailureLog = await req.json();
     
-    // Validate required fields
     if (!body.interview_id || !body.candidate_id) {
       return NextResponse.json(
         { error: 'Missing required fields' },
@@ -21,7 +20,6 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Just log to console (enough for MVP!)
     console.error('📤 Upload Failure:', {
       interview: body.interview_id,
       candidate: body.candidate_id,
@@ -32,9 +30,6 @@ export async function POST(req: NextRequest) {
       userAgent: req.headers.get('user-agent'),
     });
     
-    // TODO Production: Send to Sentry, LogRocket, or monitoring service
-    // await sendToMonitoring(body);
-    
     return NextResponse.json({ 
       success: true,
       message: 'Logged' 
@@ -43,7 +38,6 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Failed to log upload failure:', error);
     
-    // Don't fail - logging is non-critical
     return NextResponse.json({ 
       success: false,
       error: 'Logging failed, but non-critical' 

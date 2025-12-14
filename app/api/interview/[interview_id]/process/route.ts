@@ -59,12 +59,10 @@ export async function POST(
       );
     }
 
-    // CHECK FOR INCOMPLETE INTERVIEW
     const expectedCount = interview.questions.length;
     const actualCount = recordings.length;
 
     if (actualCount < expectedCount) {
-      // Identify missing questions
       const missing = [];
       for (let i = 0; i < expectedCount; i++) {
         const hasRecording = recordings.some(r => r.question_index === i);
@@ -79,7 +77,6 @@ export async function POST(
         `Missing Q${missing.join(', Q')}`
       );
       
-      // Return error with detailed info
       return NextResponse.json({
         error: 'Incomplete interview',
         message: `This interview is missing recordings for ${missing.length} question(s).`,
@@ -100,7 +97,6 @@ export async function POST(
     );
 
     const videoUrls = sortedRecordings.map(r => r.video_url);
-
     const transcripts = await transcribeMultipleVideos(videoUrls);
 
     const scoringResult = await scoreInterview(
@@ -147,7 +143,7 @@ export async function POST(
         }),
       });
     } catch (emailError) {
-      // Non-blocking: email failure doesn't stop processing
+      // Email failures are non-blocking
     }
 
     let sheetUrl = '';
@@ -189,7 +185,7 @@ export async function POST(
         recruiterEmail,
       });
     } catch (emailError) {
-      // Non-blocking: email failure doesn't stop processing
+      // Email failures are non-blocking
     }
 
     return NextResponse.json({

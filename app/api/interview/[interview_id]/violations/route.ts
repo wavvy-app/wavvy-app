@@ -1,23 +1,6 @@
-// app/api/interview/[interview_id]/violations/route.ts
-
 import { NextRequest, NextResponse } from 'next/server';
 import { saveViolation, getViolations } from '@/lib/db';
 
-/**
- * POST /api/interview/[interview_id]/violations
- * 
- * Saves a proctoring violation to the candidate's record
- * 
- * Body:
- * {
- *   candidate_id: string,
- *   violation: {
- *     type: 'NO_FACE' | 'MULTIPLE_FACES' | 'LOOKING_AWAY' | 'CAMERA_OFF' | 'TAB_SWITCH',
- *     timestamp: number,
- *     message: string
- *   }
- * }
- */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ interview_id: string }> }
@@ -28,7 +11,6 @@ export async function POST(
     
     const { candidate_id, violation } = body;
 
-    // Validate required fields
     if (!candidate_id) {
       return NextResponse.json(
         { error: 'candidate_id is required' },
@@ -43,7 +25,6 @@ export async function POST(
       );
     }
 
-    // Validate violation structure
     if (!violation.type || !violation.message || typeof violation.timestamp !== 'number') {
       return NextResponse.json(
         { error: 'Invalid violation data. Required: type, message, timestamp' },
@@ -51,7 +32,6 @@ export async function POST(
       );
     }
 
-    // Validate violation type
     const validTypes = ['NO_FACE', 'MULTIPLE_FACES', 'LOOKING_AWAY', 'CAMERA_OFF', 'TAB_SWITCH'];
     if (!validTypes.includes(violation.type)) {
       return NextResponse.json(
@@ -60,7 +40,6 @@ export async function POST(
       );
     }
 
-    // Save violation to candidate record
     await saveViolation(interview_id, candidate_id, violation);
 
     return NextResponse.json({ 
@@ -71,7 +50,6 @@ export async function POST(
   } catch (error) {
     console.error('[Violations API] Error saving violation:', error);
     
-    // Handle specific error cases
     if (error instanceof Error && error.message === 'Candidate not found') {
       return NextResponse.json(
         { error: 'Candidate not found' },
@@ -86,14 +64,6 @@ export async function POST(
   }
 }
 
-/**
- * GET /api/interview/[interview_id]/violations?candidate_id=xxx
- * 
- * Retrieves all violations for a specific candidate
- * 
- * Query params:
- *   candidate_id: string (required)
- */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ interview_id: string }> }

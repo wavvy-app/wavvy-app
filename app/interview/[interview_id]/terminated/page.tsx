@@ -24,7 +24,7 @@ export default function TerminatedPage({
 
   const searchParams = useSearchParams();
   const candidateId = searchParams.get('candidate_id');
-  const reason = searchParams.get('reason'); // 'violations' or other reasons
+  const reason = searchParams.get('reason');
   
   const [candidate, setCandidate] = useState<CandidateData | null>(null);
   const [interview, setInterview] = useState<InterviewData | null>(null);
@@ -43,7 +43,6 @@ export default function TerminatedPage({
       initializationStarted.current = true;
 
       try {
-        // Fetch candidate data
         const candidateResponse = await fetch(
           `/api/interview/${interview_id}/candidate?candidate_id=${candidateId}`
         );
@@ -55,14 +54,12 @@ export default function TerminatedPage({
         const candidateData: CandidateData = await candidateResponse.json();
         setCandidate(candidateData);
 
-        // Fetch interview data
         const interviewResponse = await fetch(`/api/interview/${interview_id}`);
         if (interviewResponse.ok) {
           const interviewData = await interviewResponse.json();
           setInterview(interviewData);
         }
 
-        // Update status to 'terminated' if not already
         if (candidateData.status !== 'terminated') {
           try {
             await fetch(`/api/interview/${interview_id}/candidate/status`, {
@@ -74,12 +71,12 @@ export default function TerminatedPage({
               }),
             });
           } catch (statusError) {
-            console.error('[Terminated] Status update error:', statusError);
+            console.error('Status update failed:', statusError);
           }
         }
         
       } catch (error) {
-        console.error('[Terminated] Initialization error:', error);
+        console.error('Initialization error:', error);
       } finally {
         setLoading(false);
       }
@@ -104,7 +101,6 @@ export default function TerminatedPage({
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-xl shadow-md p-8 text-center">
           
-          {/* Red "X" Icon */}
           <div className="w-20 h-20 bg-gradient-to-br from-red-100 to-rose-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
             <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
@@ -115,14 +111,12 @@ export default function TerminatedPage({
             Interview Terminated
           </h1>
           
-          {/* Personalized Message */}
           {candidate && (
             <p className="text-xl text-gray-600 mb-8">
               Sorry, <span className="font-semibold text-gray-800">{candidate.name}</span>.
             </p>
           )}
 
-          {/* Job Title Box */}
           {interview && (
             <div className="bg-gradient-to-br from-red-50 to-rose-50 rounded-lg p-5 mb-8 border-2 border-red-100">
               <p className="text-sm text-gray-600 mb-1">Position Applied For</p>
@@ -130,7 +124,6 @@ export default function TerminatedPage({
             </div>
           )}
 
-          {/* Main Message */}
           <div className="bg-gradient-to-br from-gray-50 to-slate-50 rounded-lg p-6 mb-8 border-2 border-gray-200">
             <p className="text-gray-800 leading-relaxed">
               Your interview has been ended due to proctoring policy violations.
@@ -143,7 +136,6 @@ export default function TerminatedPage({
 
           <div className="border-t-2 border-gray-100 my-8"></div>
 
-          {/* Technical Error Support */}
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 mb-6 border-2 border-blue-100">
             <h3 className="font-semibold text-blue-900 mb-2 flex items-center justify-center">
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,7 +154,6 @@ export default function TerminatedPage({
             )}
           </div>
 
-          {/* Contact Support */}
           <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg p-6 border-2 border-purple-100">
             <h3 className="font-semibold text-purple-900 mb-2 flex items-center justify-center">
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -193,7 +184,6 @@ export default function TerminatedPage({
           </p>
         </div>
 
-        {/* Footer */}
         <div className="text-center mt-8 text-sm text-gray-600">
           <p>
             Questions about this decision?{' '}

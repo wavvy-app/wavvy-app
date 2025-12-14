@@ -29,14 +29,12 @@ export default function PreviewPage({
   
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Redirect if no candidate_id
   useEffect(() => {
     if (!candidateId) {
       router.push(`/interview/${interview_id}/register`);
     }
   }, [candidateId, interview_id, router]);
 
-  // Fetch interview data
   useEffect(() => {
     async function fetchInterview() {
       try {
@@ -53,7 +51,6 @@ export default function PreviewPage({
     if (candidateId) fetchInterview();
   }, [interview_id, candidateId]);
 
-  // Setup camera
   useEffect(() => {
     async function setupCamera() {
       try {
@@ -70,8 +67,6 @@ export default function PreviewPage({
         }
         setError('');
       } catch (err: any) {
-        console.error("Preview Camera Error:", err.name, err.message);
-
         if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
           setError('Camera/microphone access denied. Please click the lock icon in your browser address bar to allow access.');
         } else if (err.name === 'NotFoundError') {
@@ -119,14 +114,12 @@ export default function PreviewPage({
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
         <div className="bg-gradient-to-r from-[#667eea] to-[#764ba2] rounded-xl shadow-lg p-8 mb-8 text-center">
           <h1 className="text-3xl font-semibold text-white mb-2 tracking-tight">{interview?.job_title}</h1>
           <p className="text-white/90 text-lg">Camera & Microphone Check</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-8">
-          {/* Camera Preview Section */}
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
               <svg className="w-6 h-6 text-[#667eea] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -144,13 +137,12 @@ export default function PreviewPage({
                 className="absolute top-0 left-0 w-full h-full object-cover transform scale-x-[-1]"
               />
               
-              {/* Audio Visualizer Overlay */}
               {permissionGranted && stream && (
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-2/3 z-20">
-                   <div className="bg-black/40 backdrop-blur-sm rounded-lg p-2 border border-white/10">
-                      <p className="text-xs text-center text-white/80 mb-1">Microphone Check</p>
-                      <AudioVisualizer stream={stream} />
-                   </div>
+                  <div className="bg-black/40 backdrop-blur-sm rounded-lg p-2 border border-white/10">
+                    <p className="text-xs text-center text-white/80 mb-1">Microphone Check</p>
+                    <AudioVisualizer stream={stream} />
+                  </div>
                 </div>
               )}
 
@@ -196,10 +188,7 @@ export default function PreviewPage({
             )}
           </div>
 
-          {/* Interview Rules - CLEAN VERSION */}
           <div className="mb-8 space-y-4">
-            
-            {/* Basic Rules Section */}
             <div className="p-6 bg-white rounded-lg border-2 border-gray-200">
               <h3 className="font-bold text-gray-900 mb-4 flex items-center text-lg">
                 <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -229,7 +218,6 @@ export default function PreviewPage({
               </div>
             </div>
 
-            {/* Proctoring Warning Section */}
             <div className="p-6 bg-gradient-to-br from-red-50 to-red-100 rounded-lg border-2 border-red-200">
               <div className="flex items-start mb-4">
                 <span className="text-red-600 mr-3 text-2xl">🚨</span>
@@ -269,10 +257,8 @@ export default function PreviewPage({
                 </p>
               </div>
             </div>
-            
           </div>
 
-          {/* Continue Button */}
           <div className="text-center">
             <button
               onClick={handleContinue}

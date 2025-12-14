@@ -11,9 +11,7 @@ interface InterviewData {
   questions: string[];
 }
 
-interface CandidateData {
-  question_order: number[];
-}
+interface CandidateData {}
 
 interface FailedUpload {
   blob: Blob;
@@ -44,13 +42,10 @@ export default function RecordPage({
   const [uploadedCount, setUploadedCount] = useState(0);
   const [backgroundUploadError, setBackgroundUploadError] = useState('');
 
-  // TIMERS
   const [countdownSeconds, setCountdownSeconds] = useState(30);
   const [isCountingDown, setIsCountingDown] = useState(true);
   const [canRecord, setCanRecord] = useState(false);
   const [autoAdvancing, setAutoAdvancing] = useState(false);
-  
-  // Global Countdown State
   const [remainingGlobalTime, setRemainingGlobalTime] = useState<number | null>(null);
 
   const [failedUploads, setFailedUploads] = useState<FailedUpload[]>([]);
@@ -59,20 +54,8 @@ export default function RecordPage({
   const advanceRef = useRef(false);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const globalTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const failedUploadsRef = useRef<FailedUpload[]>([]);
-
-  // ========================================
-  // ✅ CHANGED: Single video ref for proctoring (no duplicate stream!)
-  // ========================================
   const proctoringVideoRef = useRef<HTMLVideoElement>(null);
 
-  // ❌ REMOVED: monitoringVideoRef, monitoringStream, setupMonitoring useEffect
-  // We no longer need a separate camera stream for monitoring!
-
-  // ========================================
-  // PROCTORING CALLBACKS (Stabilized)
-  // ========================================
-  
   const handleTerminated = useCallback(() => {
     router.push(
       `/interview/${interview_id}/terminated?candidate_id=${candidateId}&reason=violations`
@@ -94,29 +77,15 @@ export default function RecordPage({
     }
   }, [interview_id, candidateId]);
 
-  // ========================================
-  // ✅ FIXED: Initialize proctoring with the REAL video element
-  // ========================================
-  
   const proctoring = useInterviewProctoring({
-    video: proctoringVideoRef.current,  // ✅ Now uses the actual recording video!
-    isActive: canRecord && !isCountingDown,  // ✅ Same logic as before
+    video: proctoringVideoRef.current,
+    isActive: canRecord && !isCountingDown,
     onTerminated: handleTerminated,
     maxStrikes: 3,
     interviewId: interview_id,
     candidateId: candidateId || undefined,
     onViolationLogged: handleViolationLogged
   });
-
-  // ========================================
-  // ❌ REMOVED: SETUP MONITORING VIDEO useEffect
-  // ========================================
-  // The entire useEffect that called getUserMedia for monitoring is GONE
-  // We now rely on VideoRecorder's single stream
-
-  // ========================================
-  // ROUTE PROTECTION & BROWSER CONTROLS (NO CHANGES)
-  // ========================================
 
   useEffect(() => {
     if (!candidateId) {
@@ -133,13 +102,9 @@ export default function RecordPage({
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // ========================================
-  // GLOBAL COUNTDOWN TIMER (NO CHANGES)
-  // ========================================
-
   useEffect(() => {
     if (interview && remainingGlobalTime === null) {
-      const TIME_PER_QUESTION = 300; 
+      const TIME_PER_QUESTION = 300;
       const totalTime = interview.questions.length * TIME_PER_QUESTION;
       setRemainingGlobalTime(totalTime);
     }
@@ -167,21 +132,14 @@ export default function RecordPage({
     }
   }, [remainingGlobalTime, router, interview_id, candidateId]);
 
-  // ========================================
-  // READING COUNTDOWN TIMER (NO CHANGES)
-  // ========================================
-
   useEffect(() => {
     if (interview && candidate) {
-      const questionOrder = candidate.question_order || Array.from({ length: interview.questions.length }, (_, i) => i);
-      const currentQuestion = interview.questions[questionOrder[currentQuestionIndex]];
-      
+      const currentQuestion = interview.questions[currentQuestionIndex];
       const words = currentQuestion.split(' ').length;
-      const readingTime = Math.ceil(words / 3) + 5; 
-      
+      const readingTime = Math.ceil(words / 3) + 5;
       setCountdownSeconds(readingTime);
     } else {
-      setCountdownSeconds(30); 
+      setCountdownSeconds(30);
     }
 
     setIsCountingDown(true);
@@ -208,10 +166,6 @@ export default function RecordPage({
     };
   }, [currentQuestionIndex, interview, candidate]);
 
-  // ========================================
-  // FETCH INTERVIEW DATA (NO CHANGES)
-  // ========================================
-
   useEffect(() => {
     async function fetchData() {
       try {
@@ -236,21 +190,17 @@ export default function RecordPage({
     if (candidateId) fetchData();
   }, [interview_id, candidateId]);
 
-  // ========================================
-  // UPLOAD LOGIC (NO CHANGES)
-  // ========================================
-
-  const uploadVideo = useCallback(async (blob: Blob, originalQuestionIndex: number): Promise<boolean> => {
+  const uploadVideo = useCallback(async (blob: Blob, questionIndex: number): Promise<boolean> => {
     try {
       const fileExtension = blob.type.includes('mp4') ? 'mp4' : 'webm';
       const timestamp = Date.now();
-      const filename = `interviews/${interview_id}/${candidateId}/question-${originalQuestionIndex}-${timestamp}.${fileExtension}`;
+      const filename = `interviews/${interview_id}/${candidateId}/question-${questionIndex}-${timestamp}.${fileExtension}`;
       
       const { upload } = await import('@vercel/blob/client');
       
       const result = await upload(filename, blob, {
         access: 'public',
-        handleUploadUrl: `/api/interview/${interview_id}/upload?candidate_id=${candidateId}&question_index=${originalQuestionIndex}`,
+        handleUploadUrl: `/api/interview/${interview_id}/upload?candidate_id=${candidateId}&question_index=${questionIndex}`,
       });
 
       const saveResponse = await fetch(`/api/interview/${interview_id}/save-recording`, {
@@ -258,7 +208,7 @@ export default function RecordPage({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           candidate_id: candidateId,
-          question_index: originalQuestionIndex,
+          question_index: questionIndex,
           video_url: result.url,
           duration: 0,
         }),
@@ -306,17 +256,12 @@ export default function RecordPage({
     }
   }, [retryingUploads, failedUploads, uploadVideo]);
 
-  // ========================================
-  // AUTO-ADVANCE LOGIC (NO CHANGES)
-  // ========================================
-
   const handleAutoAdvance = useCallback(async () => {
     if (!recordedBlob || !candidateId || !interview || !candidate) return;
 
     const currentBlob = recordedBlob;
-    const questionOrder = candidate.question_order || [];
-    const originalQuestionIndex = questionOrder[currentQuestionIndex];
-    const isLastQuestion = currentQuestionIndex >= questionOrder.length - 1;
+    const questionIndex = currentQuestionIndex;
+    const isLastQuestion = currentQuestionIndex >= interview.questions.length - 1;
 
     setAutoAdvancing(true);
     setUploading(true);
@@ -335,7 +280,7 @@ export default function RecordPage({
         }
       }
 
-      const success = await uploadVideo(currentBlob, originalQuestionIndex);
+      const success = await uploadVideo(currentBlob, questionIndex);
 
       if (success) {
         router.push(`/interview/${interview_id}/complete?candidate_id=${candidateId}`);
@@ -343,7 +288,7 @@ export default function RecordPage({
         setAutoAdvancing(false);
         setUploading(false);
         setError('Failed to save the final answer. Please check your internet and try again.');
-        setFailedUploads(prev => [...prev, { blob: currentBlob, questionIndex: originalQuestionIndex, attempts: 1 }]);
+        setFailedUploads(prev => [...prev, { blob: currentBlob, questionIndex, attempts: 1 }]);
       }
     } else {
       setTimeout(() => {
@@ -353,15 +298,15 @@ export default function RecordPage({
         setUploading(false);
       }, 800);
 
-      uploadVideo(currentBlob, originalQuestionIndex).then(success => {
+      uploadVideo(currentBlob, questionIndex).then(success => {
         if (success) {
           setUploadedCount(prev => prev + 1);
         } else {
-          setFailedUploads(prev => [...prev, { blob: currentBlob, questionIndex: originalQuestionIndex, attempts: 1 }]);
+          setFailedUploads(prev => [...prev, { blob: currentBlob, questionIndex, attempts: 1 }]);
           setBackgroundUploadError(`Question ${currentQuestionIndex + 1} uploading in background...`);
         }
       }).catch(() => {
-        setFailedUploads(prev => [...prev, { blob: currentBlob, questionIndex: originalQuestionIndex, attempts: 1 }]);
+        setFailedUploads(prev => [...prev, { blob: currentBlob, questionIndex, attempts: 1 }]);
       });
     }
   }, [
@@ -389,10 +334,6 @@ export default function RecordPage({
     setBackgroundUploadError('');
   };
 
-  // ========================================
-  // AUTO-ADVANCE TRIGGER (NO CHANGES)
-  // ========================================
-
   useEffect(() => {
     if (recordedBlob && !uploading && !autoAdvancing && !advanceRef.current) {
       advanceRef.current = true;
@@ -400,23 +341,11 @@ export default function RecordPage({
     }
   }, [recordedBlob, uploading, autoAdvancing, handleAutoAdvance]);
 
-  // ========================================
-  // RETRY TRIGGER (NO CHANGES)
-  // ========================================
-
   useEffect(() => {
     if (failedUploads.length > 0 && !retryingUploads) {
       retryFailedUploads();
     }
   }, [failedUploads.length, retryingUploads, retryFailedUploads]);
-
-  useEffect(() => {
-    failedUploadsRef.current = failedUploads;
-  }, [failedUploads]);
-
-  // ========================================
-  // HELPERS (NO CHANGES)
-  // ========================================
 
   const formatTime = (seconds: number | null) => {
     if (seconds === null) return "--:--";
@@ -425,25 +354,16 @@ export default function RecordPage({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // ========================================
-  // RENDER
-  // ========================================
-
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (!interview || !candidate) return null;
 
-  const questionOrder = candidate.question_order || Array.from({ length: interview.questions.length }, (_, i) => i);
-  const currentQuestion = interview.questions[questionOrder[currentQuestionIndex]];
-  const totalQuestions = questionOrder.length;
-  const isLastQuestion = currentQuestionIndex >= questionOrder.length - 1;
+  const currentQuestion = interview.questions[currentQuestionIndex];
+  const totalQuestions = interview.questions.length;
+  const isLastQuestion = currentQuestionIndex >= interview.questions.length - 1;
   const isTimeRunningLow = remainingGlobalTime !== null && remainingGlobalTime < 120;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col h-screen overflow-hidden">
-      
-      {/* ❌ REMOVED: Hidden monitoring video - no longer needed! */}
-
-      {/* Header (NO CHANGES) */}
       <div className="bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center h-16 shrink-0">
         <div>
           <h1 className="text-sm font-bold text-gray-900 uppercase">{interview.job_title}</h1>
@@ -461,10 +381,7 @@ export default function RecordPage({
         </div>
       </div>
 
-      {/* Main Content - Split Screen (NO CHANGES) */}
       <main className="flex-1 flex flex-col lg:flex-row gap-4 p-4 overflow-hidden">
-        
-        {/* Left: Question Panel (NO CHANGES) */}
         <div className="lg:w-1/3 flex flex-col bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100 shrink-0">
             <h2 className="text-xs font-bold text-blue-800 uppercase">Current Question</h2>
@@ -481,10 +398,7 @@ export default function RecordPage({
           </div>
         </div>
 
-        {/* Right: Video Recorder */}
         <div className="lg:w-2/3 bg-black rounded-xl overflow-hidden shadow-lg relative flex flex-col">
-          
-          {/* Countdown Overlay (NO CHANGES) */}
           {isCountingDown && (
             <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/95 backdrop-blur-sm">
               <div className="text-center p-8 max-w-md">
@@ -500,7 +414,6 @@ export default function RecordPage({
             </div>
           )}
 
-          {/* Auto-Advancing Overlay (NO CHANGES) */}
           {autoAdvancing && (
             <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/80 backdrop-blur-sm text-white">
               <div className="text-center">
@@ -511,10 +424,8 @@ export default function RecordPage({
             </div>
           )}
 
-          {/* ✅ CHANGED: Pass the proctoring ref to VideoRecorder */}
           <VideoRecorder 
-            key={currentQuestionIndex}
-            videoRef={proctoringVideoRef}  // ✅ NEW: Forward our ref to VideoRecorder
+            videoRef={proctoringVideoRef}
             onRecordingComplete={handleRecordingComplete}
             maxDuration={180}
             autoStartRecording={canRecord}
@@ -522,7 +433,6 @@ export default function RecordPage({
         </div>
       </main>
 
-      {/* Footer Status Bar (NO CHANGES) */}
       <div className="bg-white border-t border-gray-200 p-3 shrink-0 text-xs text-gray-500 flex justify-between items-center">
         <div>
           {failedUploads.length > 0 ? (
@@ -539,7 +449,6 @@ export default function RecordPage({
         </div>
       </div>
 
-      {/* Proctoring Notification (NO CHANGES) */}
       <ProctoringNotification
         notification={proctoring.notification}
         onDismiss={proctoring.dismissNotification}

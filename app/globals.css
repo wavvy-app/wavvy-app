@@ -12,6 +12,7 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* You can keep this for body background, but it won't affect inputs anymore */
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -23,4 +24,34 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* --- GLOBAL INPUT STYLES (Light Mode Only) --- */
+
+/* Force dark text on light backgrounds */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="number"],
+textarea,
+select {
+  color: #111827 !important; /* Override any Tailwind text-* classes */
+}
+
+/* Readable placeholder text */
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+  color: #6b7280 !important; /* Override any Tailwind placeholder-* classes */
+  opacity: 1; /* Fix Firefox dimming */
+}
+
+/* Focus states */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #667eea; /* Border changes to purple */
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12); /* Soft glow */
+  transition: border-color 0.15s ease, box-shadow 0.15s ease; /* Smooth */
 }
