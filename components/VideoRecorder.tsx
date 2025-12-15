@@ -7,13 +7,15 @@ interface VideoRecorderProps {
   maxDuration?: number;
   autoStartRecording?: boolean;
   videoRef?: React.RefObject<HTMLVideoElement | null>;
+  questionIndex?: number;
 }
 
 export default function VideoRecorder({
   onRecordingComplete,
   maxDuration = 180,
   autoStartRecording = false,
-  videoRef: externalVideoRef
+  videoRef: externalVideoRef,
+  questionIndex
 }: VideoRecorderProps) {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -31,6 +33,19 @@ export default function VideoRecorder({
   const streamRef = useRef<MediaStream | null>(null);
 
   const FINISH_BUTTON_DELAY = 6;
+
+  useEffect(() => {
+    if (questionIndex === undefined) return;
+    
+    if (isRecording) {
+      console.warn('Question changed while recording - unexpected state');
+    }
+    
+    setRecordedBlob(null);
+    setRecordingTime(0);
+    setShowFinishButton(false);
+    setShowRecordedConfirmation(false);
+  }, [questionIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     let isMounted = true;
@@ -71,6 +86,12 @@ export default function VideoRecorder({
 
     return () => {
       isMounted = false;
+      
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+      mediaRecorderRef.current = null;
+      
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
@@ -88,7 +109,7 @@ export default function VideoRecorder({
     if (autoStartRecording && stream && !isRecording && !recordedBlob) {
       startRecording();
     }
-  }, [autoStartRecording, stream]);
+  }, [autoStartRecording, stream, isRecording, recordedBlob]);
 
   useEffect(() => {
     if (isRecording) {
@@ -100,7 +121,8 @@ export default function VideoRecorder({
   }, [isRecording]);
 
   const startRecording = () => {
-    if (!stream) return;
+    const activeStream = streamRef.current;
+    if (!activeStream) return;
 
     const mimeTypes = ['video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'];
     const mimeType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type)) || '';
@@ -111,7 +133,7 @@ export default function VideoRecorder({
     }
 
     chunksRef.current = [];
-    const mediaRecorder = new MediaRecorder(stream, { mimeType });
+    const mediaRecorder = new MediaRecorder(activeStream, { mimeType });
     
     mediaRecorder.ondataavailable = (event) => {
       if (event.data.size > 0) chunksRef.current.push(event.data);

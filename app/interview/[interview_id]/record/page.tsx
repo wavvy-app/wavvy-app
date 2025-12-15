@@ -429,6 +429,7 @@ export default function RecordPage({
             onRecordingComplete={handleRecordingComplete}
             maxDuration={180}
             autoStartRecording={canRecord}
+            questionIndex={currentQuestionIndex}
           />
         </div>
       </main>
