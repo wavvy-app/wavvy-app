@@ -31,7 +31,12 @@ export async function POST(
         }
 
         return {
-          allowedContentTypes: ['video/webm', 'video/mp4'],
+          allowedContentTypes: [
+            'video/webm',
+            'video/webm;codecs=vp8,opus',
+            'video/webm;codecs=vp9,opus',
+            'video/mp4',
+          ],
           tokenPayload: JSON.stringify({
             interview_id,
             candidate_id: candidateId,

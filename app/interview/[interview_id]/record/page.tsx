@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, use, useRef, useCallback } from 'react';
+import { useState, useEffect, use, useRef, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import VideoRecorder from '@/components/VideoRecorder';
+import VideoRecorder, { VideoRecorderHandle } from '@/components/VideoRecorder';
 import { useInterviewProctoring } from '@/hooks/useInterviewProctoring';
 import ProctoringNotification from '@/components/proctoring/ProctoringNotification';
 
@@ -19,14 +19,35 @@ interface FailedUpload {
   attempts: number;
 }
 
+const TIME_PER_QUESTION = 300;
+const WORDS_PER_SECOND = 3;
+const READING_TIME_BUFFER = 5;
+const MAX_UPLOAD_RETRIES = 3;
+const LOW_TIME_THRESHOLD = 120;
+const ADVANCE_DELAY_MS = 800;
+
 export default function RecordPage({
   params,
 }: {
   params: Promise<{ interview_id: string }>;
 }) {
   const unwrappedParams = use(params);
-  const interview_id = unwrappedParams.interview_id;
+  
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#667eea] border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-500 font-medium">Initializing Secure Interview Environment...</p>
+        </div>
+      </div>
+    }>
+      <RecordPageContent interview_id={unwrappedParams.interview_id} />
+    </Suspense>
+  );
+}
 
+function RecordPageContent({ interview_id }: { interview_id: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const candidateId = searchParams.get('candidate_id');
@@ -55,6 +76,7 @@ export default function RecordPage({
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const globalTimerRef = useRef<NodeJS.Timeout | null>(null);
   const proctoringVideoRef = useRef<HTMLVideoElement>(null);
+  const videoRecorderRef = useRef<VideoRecorderHandle>(null);
 
   const handleTerminated = useCallback(() => {
     router.push(
@@ -104,7 +126,6 @@ export default function RecordPage({
 
   useEffect(() => {
     if (interview && remainingGlobalTime === null) {
-      const TIME_PER_QUESTION = 300;
       const totalTime = interview.questions.length * TIME_PER_QUESTION;
       setRemainingGlobalTime(totalTime);
     }
@@ -136,7 +157,7 @@ export default function RecordPage({
     if (interview && candidate) {
       const currentQuestion = interview.questions[currentQuestionIndex];
       const words = currentQuestion.split(' ').length;
-      const readingTime = Math.ceil(words / 3) + 5;
+      const readingTime = Math.ceil(words / WORDS_PER_SECOND) + READING_TIME_BUFFER;
       setCountdownSeconds(readingTime);
     } else {
       setCountdownSeconds(30);
@@ -152,9 +173,17 @@ export default function RecordPage({
     countdownIntervalRef.current = setInterval(() => {
       setCountdownSeconds(prev => {
         if (prev <= 1) {
-          if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+          if (countdownIntervalRef.current) {
+            clearInterval(countdownIntervalRef.current);
+          }
+
           setIsCountingDown(false);
           setCanRecord(true);
+
+          setTimeout(() => {
+            videoRecorderRef.current?.startRecordingNow();
+          }, 0);
+
           return 0;
         }
         return prev - 1;
@@ -200,6 +229,7 @@ export default function RecordPage({
       
       const result = await upload(filename, blob, {
         access: 'public',
+        contentType: blob.type,
         handleUploadUrl: `/api/interview/${interview_id}/upload?candidate_id=${candidateId}&question_index=${questionIndex}`,
       });
 
@@ -234,7 +264,7 @@ export default function RecordPage({
     const stillFailed: FailedUpload[] = [];
 
     for (const failed of uploadsToRetry) {
-      if (failed.attempts >= 3) {
+      if (failed.attempts >= MAX_UPLOAD_RETRIES) {
         stillFailed.push(failed);
         continue;
       }
@@ -291,23 +321,22 @@ export default function RecordPage({
         setFailedUploads(prev => [...prev, { blob: currentBlob, questionIndex, attempts: 1 }]);
       }
     } else {
-      setTimeout(() => {
-        setCurrentQuestionIndex(prev => prev + 1);
-        setRecordedBlob(null);
-        setAutoAdvancing(false);
-        setUploading(false);
-      }, 800);
-
       uploadVideo(currentBlob, questionIndex).then(success => {
-        if (success) {
-          setUploadedCount(prev => prev + 1);
-        } else {
+        if (!success) {
           setFailedUploads(prev => [...prev, { blob: currentBlob, questionIndex, attempts: 1 }]);
           setBackgroundUploadError(`Question ${currentQuestionIndex + 1} uploading in background...`);
         }
       }).catch(() => {
         setFailedUploads(prev => [...prev, { blob: currentBlob, questionIndex, attempts: 1 }]);
       });
+
+      setTimeout(() => {
+        videoRecorderRef.current?.resetForNextQuestion();
+        setCurrentQuestionIndex(prev => prev + 1);
+        setRecordedBlob(null);
+        setAutoAdvancing(false);
+        setUploading(false);
+      }, ADVANCE_DELAY_MS);
     }
   }, [
     recordedBlob,
@@ -326,6 +355,10 @@ export default function RecordPage({
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     setIsCountingDown(false);
     setCanRecord(true);
+    
+    setTimeout(() => {
+      videoRecorderRef.current?.startRecordingNow();
+    }, 0);
   };
 
   const handleRecordingComplete = (blob: Blob) => {
@@ -354,13 +387,20 @@ export default function RecordPage({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
+
   if (!interview || !candidate) return null;
 
   const currentQuestion = interview.questions[currentQuestionIndex];
   const totalQuestions = interview.questions.length;
   const isLastQuestion = currentQuestionIndex >= interview.questions.length - 1;
-  const isTimeRunningLow = remainingGlobalTime !== null && remainingGlobalTime < 120;
+  const isTimeRunningLow = remainingGlobalTime !== null && remainingGlobalTime < LOW_TIME_THRESHOLD;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col h-screen overflow-hidden">
@@ -368,7 +408,9 @@ export default function RecordPage({
         <div>
           <h1 className="text-sm font-bold text-gray-900 uppercase">{interview.job_title}</h1>
           <div className="flex items-center gap-2 text-xs mt-1">
-            <span className={`font-mono transition-colors duration-300 ${isTimeRunningLow ? 'text-red-600 font-bold animate-pulse' : 'text-gray-500'}`}>
+            <span className={`font-mono transition-colors duration-300 ${
+              isTimeRunningLow ? 'text-red-600 font-bold animate-pulse' : 'text-gray-500'
+            }`}>
               ⏱️ Time Remaining: {formatTime(remainingGlobalTime)}
             </span>
           </div>
@@ -406,10 +448,15 @@ export default function RecordPage({
                 <div className="text-8xl font-bold text-[#667eea] font-mono mb-6 animate-pulse">
                   {countdownSeconds}
                 </div>
-                <button onClick={handleManualStart} className="px-8 py-3 bg-black text-white rounded-full hover:bg-gray-800 transition-colors">
+                <button 
+                  onClick={handleManualStart}
+                  className="px-8 py-3 bg-black text-white rounded-full hover:bg-gray-800 transition-colors"
+                >
                   I'm Ready, Start Now
                 </button>
-                <p className="text-xs text-gray-400 mt-4">Recording will start automatically when timer ends</p>
+                <p className="text-xs text-gray-400 mt-4">
+                  Recording will start automatically when timer ends
+                </p>
               </div>
             </div>
           )}
@@ -419,17 +466,18 @@ export default function RecordPage({
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-green-500 border-t-transparent mx-auto mb-4"></div>
                 <h3 className="text-2xl font-bold">Saving Answer...</h3>
-                <p className="text-gray-400">{isLastQuestion ? 'Finalizing interview' : 'Moving to next question'}</p>
+                <p className="text-gray-400">
+                  {isLastQuestion ? 'Finalizing interview' : 'Moving to next question'}
+                </p>
               </div>
             </div>
           )}
 
           <VideoRecorder 
+            ref={videoRecorderRef}
             videoRef={proctoringVideoRef}
             onRecordingComplete={handleRecordingComplete}
             maxDuration={180}
-            autoStartRecording={canRecord}
-            questionIndex={currentQuestionIndex}
           />
         </div>
       </main>
@@ -437,16 +485,24 @@ export default function RecordPage({
       <div className="bg-white border-t border-gray-200 p-3 shrink-0 text-xs text-gray-500 flex justify-between items-center">
         <div>
           {failedUploads.length > 0 ? (
-            <span className="text-amber-600 font-bold animate-pulse">⚠️ {failedUploads.length} uploads retrying in background...</span>
+            <span className="text-amber-600 font-bold animate-pulse">
+              ⚠️ {failedUploads.length} uploads retrying in background...
+            </span>
           ) : (
             <span className="text-green-600 flex items-center gap-1">
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path 
+                  fillRule="evenodd" 
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" 
+                  clipRule="evenodd" 
+                />
+              </svg>
               Systems Normal
             </span>
           )}
         </div>
         <div className="opacity-50">
-          Candidate ID: {candidateId?.slice(0,8)}
+          Candidate ID: {candidateId?.slice(0, 8)}
         </div>
       </div>
 
