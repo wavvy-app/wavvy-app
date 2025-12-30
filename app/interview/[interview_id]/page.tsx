@@ -183,7 +183,7 @@ export default async function InterviewPage({
               </li>
               <li className="flex items-start">
                 <span className="text-yellow-600 mr-2 font-bold">✓</span>
-                <span className="pt-0.5">You have about {estimatedMinutes}-{estimatedMinutes + 5} minutes available</span>
+                <span className="pt-0.5">You have about 45 minutes available</span>
               </li>
               <li className="flex items-start">
                 <span className="text-yellow-600 mr-2 font-bold">✓</span>
