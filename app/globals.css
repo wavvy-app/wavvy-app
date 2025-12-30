@@ -12,7 +12,7 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* You can keep this for body background, but it won't affect inputs anymore */
+/* Dark mode for body only - inputs stay light */
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -26,24 +26,33 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* --- GLOBAL INPUT STYLES (Light Mode Only) --- */
+/* --- FORCE LIGHT INPUTS (FIXES macOS DARK MODE) --- */
 
-/* Force dark text on light backgrounds */
 input[type="text"],
 input[type="email"],
 input[type="tel"],
 input[type="number"],
+input[type="password"],
+input[type="search"],
+input[type="url"],
 textarea,
 select {
-  color: #111827 !important; /* Override any Tailwind text-* classes */
+  background-color: #ffffff !important;  /* THE KEY FIX - forces white background */
+  color: #111827 !important;
+  caret-color: #111827 !important;       /* Visible cursor */
+  
+  /* Reset Mac/Safari default styling */
+  -webkit-appearance: none;
+  appearance: none;
 }
 
-/* Readable placeholder text */
+/* Readable placeholder text - with browser prefixes */
 input::placeholder,
 textarea::placeholder,
-select::placeholder {
-  color: #6b7280 !important; /* Override any Tailwind placeholder-* classes */
-  opacity: 1; /* Fix Firefox dimming */
+input::-webkit-input-placeholder,
+textarea::-webkit-input-placeholder {
+  color: #6b7280 !important;
+  opacity: 1 !important;
 }
 
 /* Focus states */
@@ -51,7 +60,8 @@ input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  border-color: #667eea; /* Border changes to purple */
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12); /* Soft glow */
-  transition: border-color 0.15s ease, box-shadow 0.15s ease; /* Smooth */
+  background-color: #ffffff !important;  /* Keep white background on focus */
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
