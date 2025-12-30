@@ -126,7 +126,7 @@ function RecordPageContent({ interview_id }: { interview_id: string }) {
 
   useEffect(() => {
     if (interview && remainingGlobalTime === null) {
-      const totalTime = interview.questions.length * TIME_PER_QUESTION;
+      const totalTime = 45 * 60;
       setRemainingGlobalTime(totalTime);
     }
 
@@ -435,7 +435,7 @@ function RecordPageContent({ interview_id }: { interview_id: string }) {
           </div>
           <div className="p-4 bg-gray-50 border-t border-gray-100 shrink-0">
             <p className="text-xs text-gray-500 flex items-center">
-              <span className="mr-2">ℹ️</span> You have 3 minutes to answer.
+              <span className="mr-2">ℹ️</span> Recommended: ~3 minutes per answer (total interview ~45 minutes)
             </p>
           </div>
         </div>

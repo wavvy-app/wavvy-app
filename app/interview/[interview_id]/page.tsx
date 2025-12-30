@@ -41,7 +41,7 @@ export default async function InterviewPage({
   }
 
   const questionCount = interview.questions.length;
-  const estimatedMinutes = Math.ceil(questionCount * 4);
+  const estimatedMinutes = 45;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4">
@@ -152,7 +152,7 @@ export default async function InterviewPage({
                   />
                 </svg>
                 <span className="text-purple-900 font-semibold">
-                  Estimated time: {estimatedMinutes}-{estimatedMinutes + 5} minutes
+                  Estimated time: about 45 minutes
                 </span>
               </div>
               <span className="text-purple-700 text-sm font-medium">
