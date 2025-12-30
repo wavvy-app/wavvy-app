@@ -575,7 +575,7 @@ export default function Home() {
             <div className="bg-white p-8 rounded-xl shadow-md">
               <div className="mb-6">
                 <label className="block font-semibold mb-3 text-gray-800">Interview Link:</label>
-                <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border-2 border-gray-200 font-mono text-sm break-all mb-4">
+                <div className="p-4 bg-gray-50 text-gray-900 border-2 border-gray-200 rounded-lg font-mono text-sm break-all mb-4">
                   {result.interview_link}
                 </div>
                 
