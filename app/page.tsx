@@ -7,9 +7,7 @@ const DEFAULT_OPENING = `Tell me about yourself and your professional background
 
 Why are you interested in this role and our company?`;
 
-const DEFAULT_CLOSING = `What are your salary expectations for this role?
-
-When would you be available to start if offered the position?
+const DEFAULT_CLOSING = `When would you be available to start if offered the position?
 
 Do you have any questions for us?`;
 
@@ -140,7 +138,7 @@ export default function Home() {
       const response = await fetch('/api/generate-interview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...cleanedData, num_questions: 5 }),
+        body: JSON.stringify({ ...cleanedData, num_questions: 10 }),
       });
       
       if (!response.ok) {
@@ -518,7 +516,7 @@ export default function Home() {
 
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 shadow-sm">
               <p className="text-sm text-gray-700 font-medium">
-                ✨ AI will generate 5 role-specific questions based on the job details above
+                ✨ AI will generate several in-depth, role-specific questions based on the job details, responsibilities, and skills
               </p>
             </div>
 
