@@ -109,10 +109,23 @@ export default function CompletePage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#667eea] mx-auto mb-4"></div>
-          <p className="text-gray-600">Finalizing your submission...</p>
+          
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Processing Your Interview
+          </h2>
+          
+          <p className="text-gray-600 mb-6">
+            We're uploading your video responses. This may take a moment.
+          </p>
+          
+          <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-4">
+            <p className="text-sm text-amber-800 font-medium">
+              ⚠️ Please don't close this tab until processing is complete
+            </p>
+          </div>
         </div>
       </div>
     );
