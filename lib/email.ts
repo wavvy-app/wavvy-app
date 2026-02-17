@@ -41,7 +41,7 @@ export async function sendCandidateConfirmationEmail({
 }: CandidateConfirmationEmailProps) {
   try {
     const { data, error } = await resend.emails.send({
-      from: 'Wavvy Interviews <onboarding@resend.dev>',
+      from: 'Wavvy Interviews <noreply@wavvy.world>',
       to: candidateEmail,
       subject: `Interview Submitted - ${jobTitle}`,
       html: `
@@ -149,7 +149,7 @@ export async function sendRecruiterResultsEmail({
     const scoreEmoji = '⭐';
 
     const { data, error } = await resend.emails.send({
-      from: 'Wavvy Interviews <onboarding@resend.dev>',
+      from: 'Wavvy Interviews <noreply@wavvy.world>',
       to: recruiterEmail,
       subject: `Interview Results: ${candidateName} - ${jobTitle} (${overallScore}/10)`,
       html: `
@@ -256,7 +256,7 @@ export async function sendRecruiterNotificationEmail({
 }: RecruiterNotificationEmailProps) {
   try {
     const { data, error } = await resend.emails.send({
-      from: 'Wavvy Interviews <onboarding@resend.dev>',
+      from: 'Wavvy Interviews <noreply@wavvy.world>',
       to: recruiterEmail,
       subject: `New Interview Submission - ${candidateName} for ${jobTitle}`,
       html: `
