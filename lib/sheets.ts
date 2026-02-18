@@ -45,6 +45,16 @@ export async function exportToGoogleSheets(
   candidateData: CandidateResults
 ): Promise<string> {
   try {
+    console.log('📊 Starting Google Sheets export...');
+    console.log('📊 Interview ID:', interviewId);
+    console.log('📊 Candidate:', candidateData.candidate.email);
+    
+    console.log('🔑 Checking environment variables...');
+    console.log('🔑 GOOGLE_SHEETS_SPREADSHEET_ID exists:', !!process.env.GOOGLE_SHEETS_SPREADSHEET_ID);
+    console.log('🔑 GOOGLE_SERVICE_ACCOUNT_EMAIL exists:', !!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL);
+    console.log('🔑 GOOGLE_PRIVATE_KEY exists:', !!process.env.GOOGLE_PRIVATE_KEY);
+    console.log('🔑 Spreadsheet ID:', process.env.GOOGLE_SHEETS_SPREADSHEET_ID);
+    
     const sheets = getGoogleSheetsClient();
     const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
     
@@ -52,36 +62,57 @@ export async function exportToGoogleSheets(
       throw new Error('GOOGLE_SHEETS_SPREADSHEET_ID not configured');
     }
     
+    console.log('📝 Ensuring headers...');
     await ensureHeaders(sheets, spreadsheetId);
+    console.log('✅ Headers ensured');
+    
+    console.log('📦 Preparing row data...');
     const rowData = prepareRowData(candidateData);
+    console.log('✅ Row data prepared');
+    
+    console.log('🔍 Finding existing candidate...');
     const existingRowIndex = await findCandidateRow(sheets, spreadsheetId, candidateData.candidate.email);
+    console.log('🔍 Existing row index:', existingRowIndex);
     
     if (existingRowIndex !== -1) {
+      console.log('📝 Updating existing row...');
       await updateRow(sheets, spreadsheetId, existingRowIndex, rowData);
+      console.log('✅ Row updated');
     } else {
+      console.log('📝 Appending new row...');
       await appendRow(sheets, spreadsheetId, rowData);
+      console.log('✅ Row appended');
     }
     
-    return `https://docs.google.com/spreadsheets/d/${spreadsheetId}`;
+    const sheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}`;
+    console.log('✅ Export complete! Sheet URL:', sheetUrl);
+    return sheetUrl;
   } catch (error: any) {
+    console.error('💥 Google Sheets Export Error:', error);
+    console.error('💥 Error message:', error.message);
+    console.error('💥 Error stack:', error.stack);
     throw new Error(`Failed to export to Google Sheets: ${error.message}`);
   }
 }
 
 async function ensureHeaders(sheets: any, spreadsheetId: string): Promise<void> {
   try {
+    console.log('📋 Checking for existing headers...');
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
       range: 'Sheet1!A1:R1',
     });
     
     if (response.data.values?.[0]?.[0]) {
+      console.log('✅ Headers already exist');
       return;
     }
   } catch (error) {
-    // Headers don't exist
+    console.log('⚠️ Headers check failed, will create new headers');
+    console.error('⚠️ Error:', error);
   }
   
+  console.log('📝 Creating headers...');
   await sheets.spreadsheets.values.update({
     spreadsheetId,
     range: 'Sheet1!A1',
@@ -109,7 +140,9 @@ async function ensureHeaders(sheets: any, spreadsheetId: string): Promise<void> 
       ]],
     },
   });
+  console.log('✅ Headers created');
   
+  console.log('🎨 Formatting headers...');
   await sheets.spreadsheets.batchUpdate({
     spreadsheetId,
     requestBody: {
@@ -131,6 +164,7 @@ async function ensureHeaders(sheets: any, spreadsheetId: string): Promise<void> 
       }],
     },
   });
+  console.log('✅ Headers formatted');
 }
 
 function prepareRowData(candidateData: CandidateResults): any[] {
