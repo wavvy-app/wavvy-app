@@ -45,16 +45,6 @@ export async function exportToGoogleSheets(
   candidateData: CandidateResults
 ): Promise<string> {
   try {
-    console.log('📊 Starting Google Sheets export...');
-    console.log('📊 Interview ID:', interviewId);
-    console.log('📊 Candidate:', candidateData.candidate.email);
-    
-    console.log('🔑 Checking environment variables...');
-    console.log('🔑 GOOGLE_SHEETS_SPREADSHEET_ID exists:', !!process.env.GOOGLE_SHEETS_SPREADSHEET_ID);
-    console.log('🔑 GOOGLE_SERVICE_ACCOUNT_EMAIL exists:', !!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL);
-    console.log('🔑 GOOGLE_PRIVATE_KEY exists:', !!process.env.GOOGLE_PRIVATE_KEY);
-    console.log('🔑 Spreadsheet ID:', process.env.GOOGLE_SHEETS_SPREADSHEET_ID);
-    
     const sheets = getGoogleSheetsClient();
     const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
     
@@ -62,57 +52,36 @@ export async function exportToGoogleSheets(
       throw new Error('GOOGLE_SHEETS_SPREADSHEET_ID not configured');
     }
     
-    console.log('📝 Ensuring headers...');
     await ensureHeaders(sheets, spreadsheetId);
-    console.log('✅ Headers ensured');
-    
-    console.log('📦 Preparing row data...');
     const rowData = prepareRowData(candidateData);
-    console.log('✅ Row data prepared');
-    
-    console.log('🔍 Finding existing candidate...');
     const existingRowIndex = await findCandidateRow(sheets, spreadsheetId, candidateData.candidate.email);
-    console.log('🔍 Existing row index:', existingRowIndex);
     
     if (existingRowIndex !== -1) {
-      console.log('📝 Updating existing row...');
       await updateRow(sheets, spreadsheetId, existingRowIndex, rowData);
-      console.log('✅ Row updated');
     } else {
-      console.log('📝 Appending new row...');
       await appendRow(sheets, spreadsheetId, rowData);
-      console.log('✅ Row appended');
     }
     
-    const sheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}`;
-    console.log('✅ Export complete! Sheet URL:', sheetUrl);
-    return sheetUrl;
+    return `https://docs.google.com/spreadsheets/d/${spreadsheetId}`;
   } catch (error: any) {
-    console.error('💥 Google Sheets Export Error:', error);
-    console.error('💥 Error message:', error.message);
-    console.error('💥 Error stack:', error.stack);
     throw new Error(`Failed to export to Google Sheets: ${error.message}`);
   }
 }
 
 async function ensureHeaders(sheets: any, spreadsheetId: string): Promise<void> {
   try {
-    console.log('📋 Checking for existing headers...');
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'Sheet1!A1:R1',
+      range: 'Sheet1!A1:AF1',
     });
     
     if (response.data.values?.[0]?.[0]) {
-      console.log('✅ Headers already exist');
       return;
     }
   } catch (error) {
-    console.log('⚠️ Headers check failed, will create new headers');
-    console.error('⚠️ Error:', error);
+    // Headers don't exist
   }
   
-  console.log('📝 Creating headers...');
   await sheets.spreadsheets.values.update({
     spreadsheetId,
     range: 'Sheet1!A1',
@@ -134,15 +103,23 @@ async function ensureHeaders(sheets: any, spreadsheetId: string): Promise<void> 
         'Q3 Score',
         'Q4 Score',
         'Q5 Score',
+        'Q6 Score',
+        'Q7 Score',
+        'Q8 Score',
+        'Q9 Score',
+        'Q10 Score',
+        'Q11 Score',
+        'Q12 Score',
+        'Q13 Score',
+        'Q14 Score',
+        'Q15 Score',
         'Recording Links',
         'Submitted At',
         'Processed At',
       ]],
     },
   });
-  console.log('✅ Headers created');
   
-  console.log('🎨 Formatting headers...');
   await sheets.spreadsheets.batchUpdate({
     spreadsheetId,
     requestBody: {
@@ -164,14 +141,13 @@ async function ensureHeaders(sheets: any, spreadsheetId: string): Promise<void> 
       }],
     },
   });
-  console.log('✅ Headers formatted');
 }
 
 function prepareRowData(candidateData: CandidateResults): any[] {
   const { candidate, results, recordings } = candidateData;
   
   const questionScores = results.questionScores.map(q => `${q.score}/2`);
-  while (questionScores.length < 5) {
+  while (questionScores.length < 15) {
     questionScores.push('N/A');
   }
   
@@ -232,7 +208,8 @@ async function updateRow(
   rowIndex: number,
   rowData: any[]
 ): Promise<void> {
-  const range = `Sheet1!A${rowIndex + 1}:R${rowIndex + 1}`;
+  const lastColumn = String.fromCharCode(64 + rowData.length);
+  const range = `Sheet1!A${rowIndex + 1}:${lastColumn}${rowIndex + 1}`;
   
   await sheets.spreadsheets.values.update({
     spreadsheetId,
